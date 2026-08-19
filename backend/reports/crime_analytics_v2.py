@@ -1,0 +1,757 @@
+# -*- coding: utf-8 -*-
+"""Crime Analytics Punjab (New Design) — a brand-new report entry with its
+own file, registered separately in app.py. The two existing Crime Analytics
+reports (crime_analytics.py, crime_analytics_monthly.py) are NOT modified;
+this module only imports their already-tested data functions (weekly trend,
+per-category min/max/chronic, rising-district detection, the Key Insights
+builder) and renders them in the dark-navy/gold executive design supplied
+2026-08-19, matching the reference PDF/HTML pixel-for-pixel where practical.
+
+One thing was added that the supplied design didn't have: a line chart for
+the week-by-week "Is Crime Rising or Falling" trend, in Section 02 — every
+other weekly-average table in this project has a chart next to it; this
+design's table didn't, so one was added in the same visual language
+(navy line, gold markers) with its own legend.
+
+Fonts: Playfair Display is embedded as a base64 @font-face (see
+render/assets/playfair.txt) rather than linked from Google Fonts, so PDF
+generation never depends on outbound network access at render time — the
+same reasoning this project already applies to the CSU/Government logos.
+"""
+import json
+from datetime import date
+
+import db
+import config
+from reports.common import (
+    DISTRICT_FILTER_SQL, CSU_LOGO, GOVT_LOGO, esc, save_html, render_pdf,
+    real_crime_sum_sql, all_crime_sum_sql,
+)
+from reports.crime_analytics import (
+    ALL_CATEGORIES, HEADLINE_CATEGORIES, OTHER_COLUMNS,
+    _date_bounds, _to_date, _weekly_trend, _change_badge, _typical_vs_latest, _minmax5, _chronic5,
+    _build_default_insights, _highlight_keywords,
+)
+from reports.crime_analytics_monthly import (
+    _week_template, _weekly_by_category_data, _week_trend_badge, _cal_week_label,
+    _rising_districts, _weekly_context,
+)
+
+with open(config.ASSETS_DIR / "playfair.txt", "r", encoding="utf-8") as f:
+    PLAYFAIR_FONT = f.read().strip()
+
+# Abbreviated labels for the wide Week-by-Week table only (18 columns of
+# weeks + Typ. + Trend leave very little room per category name); full
+# names (from ALL_CATEGORIES) are used everywhere else, including the
+# per-crime detail card headings.
+SHORT_LABELS = {
+    "murder": "Murder", "dacoity": "Dacoity", "robbery": "Robbery",
+    "dacoity_robbery_murder": "D/R – Murder", "dacoity_robbery_injury": "D/R – Injury",
+    "dacoity_robbery_rape": "D/R – Rape", "snatching_jhappata": "Snatching/<br/>Jhappata",
+    "child_abuse": "Child Abuse", "rape": "Rape", "gang_rape": "Gang Rape",
+    "sodomy": "Sodomy", "road_accident_casualties": "Road Accident<br/>Cas.",
+    "acid_attack": "Acid Attack", "religious_issues": "Religious<br/>Issues",
+}
+# Categories with their own detail card. Dacoity/Robbery with Rape is
+# excluded (0-1 cases/week all period, per the supplied design's own note)
+# and only shown in the Week-by-Week table.
+CARD_CATEGORIES = [(c, l) for c, l in ALL_CATEGORIES if c != "dacoity_robbery_rape"]
+
+DOC_LABEL = "Crime Analytics Punjab<br>Comparative Analysis"
+
+# Cover page icons (calendar x2, shield-lock), line icons drawn from
+# primitives so they render identically regardless of installed fonts.
+_ICON_CALENDAR = (
+    '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" '
+    'stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">'
+    '<rect x="3.5" y="5" width="17" height="15" rx="2"/>'
+    '<line x1="3.5" y1="9.5" x2="20.5" y2="9.5"/>'
+    '<line x1="8" y1="3" x2="8" y2="6.5"/><line x1="16" y1="3" x2="16" y2="6.5"/>'
+    '<rect x="7.6" y="12.6" width="2.6" height="2.6" fill="currentColor" stroke="none"/>'
+    '</svg>'
+)
+_ICON_SHIELD = (
+    '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" '
+    'stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">'
+    '<path d="M12 3 L20 6 V11 C20 16.5 16.5 20.2 12 21.5 C7.5 20.2 4 16.5 4 11 V6 Z"/>'
+    '<rect x="9.3" y="11.4" width="5.4" height="4.6" rx="1"/>'
+    '<path d="M10.3 11.4 V9.7 A1.7 1.7 0 0 1 13.7 9.7 V11.4"/>'
+    '</svg>'
+)
+
+# Cover page bottom illustration: a simplified building-entrance line sketch
+# (matches the design brief's watermark-style architectural art) plus the
+# navy/gold diagonal bar along the very bottom edge, as one full-bleed SVG.
+def _tree(cx, base_y, scale=1.0):
+    """One small tree: overlapping-circle canopy over a trunk, in a planter."""
+    s = scale
+    return f"""
+    <g stroke="#D6D3C8" stroke-width="1.1" fill="none">
+      <circle cx="{cx-7*s:.0f}" cy="{base_y-30*s:.0f}" r="{11*s:.1f}"/>
+      <circle cx="{cx+7*s:.0f}" cy="{base_y-30*s:.0f}" r="{11*s:.1f}"/>
+      <circle cx="{cx:.0f}" cy="{base_y-38*s:.0f}" r="{12*s:.1f}"/>
+      <line x1="{cx:.0f}" y1="{base_y-20*s:.0f}" x2="{cx:.0f}" y2="{base_y:.0f}"/>
+      <path d="M{cx-16*s:.0f} {base_y:.0f} L{cx+16*s:.0f} {base_y:.0f} L{cx+12*s:.0f} {base_y+14*s:.0f} L{cx-12*s:.0f} {base_y+14*s:.0f} Z"/>
+    </g>"""
+
+
+_COVER_BUILDING_SVG = f"""
+<svg viewBox="0 0 900 320" width="100%" height="350" preserveAspectRatio="xMidYMax slice" style="display:block">
+  <g stroke="#D8D5CC" stroke-width="1.5" fill="#fff">
+    <rect x="150" y="46" width="190" height="194" />
+    <rect x="340" y="96" width="410" height="144" />
+    <line x1="150" y1="46" x2="340" y2="46" stroke-width="1.8"/>
+    <line x1="340" y1="96" x2="750" y2="96" stroke-width="1.8"/>
+  </g>
+  <g stroke="#E7E4DA" stroke-width="0.9">
+    <line x1="178" y1="46" x2="178" y2="240"/><line x1="206" y1="46" x2="206" y2="240"/>
+    <line x1="234" y1="46" x2="234" y2="240"/><line x1="262" y1="46" x2="262" y2="240"/>
+    <line x1="290" y1="46" x2="290" y2="240"/><line x1="318" y1="46" x2="318" y2="240"/>
+    <line x1="150" y1="82" x2="340" y2="82"/><line x1="150" y1="118" x2="340" y2="118"/>
+    <line x1="150" y1="154" x2="340" y2="154"/><line x1="150" y1="190" x2="340" y2="190"/>
+    <line x1="372" y1="96" x2="372" y2="240"/><line x1="404" y1="96" x2="404" y2="240"/>
+    <line x1="436" y1="96" x2="436" y2="240"/><line x1="468" y1="96" x2="468" y2="240"/>
+    <line x1="500" y1="96" x2="500" y2="240"/><line x1="532" y1="96" x2="532" y2="240"/>
+    <line x1="564" y1="96" x2="564" y2="240"/><line x1="596" y1="96" x2="596" y2="240"/>
+    <line x1="628" y1="96" x2="628" y2="240"/><line x1="660" y1="96" x2="660" y2="240"/>
+    <line x1="692" y1="96" x2="692" y2="240"/><line x1="724" y1="96" x2="724" y2="240"/>
+    <line x1="340" y1="130" x2="750" y2="130"/><line x1="340" y1="164" x2="750" y2="164"/>
+    <line x1="340" y1="198" x2="750" y2="198"/>
+  </g>
+  <text x="172" y="68" font-family="Arial,Helvetica,sans-serif" font-size="21" font-weight="800" fill="#C9C6BA" letter-spacing="1">CSU</text>
+  <text x="172" y="83" font-family="Arial,Helvetica,sans-serif" font-size="6.6" fill="#D2CFC3">CHIEF MINISTER'S CRIME</text>
+  <text x="172" y="93" font-family="Arial,Helvetica,sans-serif" font-size="6.6" fill="#D2CFC3">SURVEILLANCE UNIT</text>
+  <g stroke="#CFCCC0" stroke-width="1.6" fill="#fff">
+    <path d="M197 240 L197 186 L293 186 L293 240" />
+    <line x1="184" y1="186" x2="184" y2="240" stroke-width="1.3"/>
+    <line x1="306" y1="186" x2="306" y2="240" stroke-width="1.3"/>
+    <path d="M180 186 L310 186 L318 178 L172 178 Z" fill="#F2F0E9"/>
+  </g>
+  <g stroke="#DBD8CD" stroke-width="1">
+    <line x1="245" y1="186" x2="245" y2="240"/>
+    <line x1="221" y1="192" x2="221" y2="240"/><line x1="269" y1="192" x2="269" y2="240"/>
+  </g>
+  <line x1="40" y1="240" x2="860" y2="240" stroke="#D8D5CC" stroke-width="1.7"/>
+  {_tree(95, 240, 1.15)}{_tree(130, 240, 0.85)}
+  {_tree(795, 240, 1.05)}{_tree(830, 240, 0.8)}{_tree(400, 240, 0.7)}
+  <polygon points="0,286 900,258 900,320 0,320" fill="#162D45"/>
+  <polygon points="660,320 900,270 900,320" fill="#C8A45C"/>
+</svg>
+"""
+
+# Plain-language methodology note per Key Insights card -- how that
+# specific finding is computed, shown as a small gray-background box under
+# each card's text so the number isn't just asserted, it's explained.
+# Small "i" info-circle icon, drawn from primitives rather than a font glyph
+# so it renders identically regardless of what's installed on the machine
+# doing the PDF render.
+_METHOD_ICON = (
+    '<svg width="10" height="10" viewBox="0 0 16 16" style="flex:0 0 auto;margin-top:2px">'
+    '<circle cx="8" cy="8" r="7" fill="none" stroke="currentColor" stroke-width="1.4"/>'
+    '<circle cx="8" cy="4.7" r="1.1" fill="currentColor"/>'
+    '<rect x="7" y="7" width="2" height="5.6" rx="0.7" fill="currentColor"/>'
+    '</svg>'
+)
+
+INSIGHT_METHODOLOGY = {
+    "Overall Crime Trend": (
+        "Most recent complete week's daily average, compared against Typical "
+        "(the average of every complete week on file). The trailing partial week is left out of both sides."
+    ),
+    "Crimes Showing Increase": (
+        "Each crime type's latest complete week compared against its own "
+        "Typical week. Only listed if the change is 3% or more and the category has at least 20 combined cases, "
+        "so a small category swinging from 1 case to 2 doesn't get reported as a headline jump."
+    ),
+    "Crimes Showing Decline": (
+        "Each crime type's latest complete week compared against its own "
+        "Typical week. Only listed if the change is 3% or more and the category has at least 20 combined cases, "
+        "so a small category isn't reported as a false swing."
+    ),
+    "High-Incidence Districts": (
+        "Every district's own case count as a share of every case reported anywhere "
+        "in Punjab this period, ranked highest first."
+    ),
+    "Persistent Crime Pattern": (
+        "Districts that rank among the most chronic (most days with at least one case, "
+        "not just the highest total) in 3 or more of the 6 headline crime categories."
+    ),
+    "Snatching Concentration": (
+        "The 3 districts with the highest raw Snatching/Jhappata case count this period."
+    ),
+    "Sensitive Crime Concerns": (
+        "The top 3 districts by Child Abuse case count, and separately the top 3 "
+        "districts by Rape case count, this period."
+    ),
+    "Emerging District Trends": (
+        "Districts driving the sharpest rise in Murder and Robbery specifically, "
+        "comparing each district's latest complete week against its own Typical week."
+    ),
+    "Provincial Crime Concentration": (
+        "The 5 districts with the largest share of every case reported anywhere in "
+        "Punjab this period, combined."
+    ),
+}
+
+
+# ═══════════════════════════════════════════════════════════════════════
+# CSS — translated from the supplied design 1:1 (colours, type scale,
+# component shapes); .trend-up/.trend-dn added so the imported
+# _highlight_keywords() word-colouring (built for the other two reports)
+# renders correctly here too, using this design's own red/green tokens.
+# ═══════════════════════════════════════════════════════════════════════
+CSS = f"""
+@font-face{{font-family:'Playfair Display';font-weight:600 800;font-style:normal;font-display:swap;src:url({PLAYFAIR_FONT}) format('woff2')}}
+:root{{--dk:#0c1b2a;--dk2:#162d45;--accent:#c8a45c;--accent2:#d4b76a;--red:#c0392b;--green:#27854a;--gray:#64748b;--line:#e2e0db}}
+*{{margin:0;padding:0;box-sizing:border-box}}
+body{{font-family:-apple-system,'Segoe UI',system-ui,sans-serif;color:#1e293b;line-height:1.5;background:#fff}}
+@page{{size:A4;margin:0}}
+.page{{width:210mm;height:297mm;display:flex;flex-direction:column;padding:13mm 15mm 11mm 28mm;overflow:hidden;break-after:page;page-break-after:always;background:#fff}}
+.page:last-child{{break-after:auto;page-break-after:auto}}
+@media screen{{ body{{background:#DDD}} .page{{margin:14px auto;box-shadow:0 4px 24px rgba(0,0,0,.15)}} }}
+.ph{{flex:0 0 auto;display:flex;align-items:center;gap:9px;padding-bottom:8px;border-bottom:2px solid var(--dk);margin-bottom:14px}}
+.ph img{{height:26px;width:auto}}
+.ph .org{{flex:1;line-height:1.2}}
+.ph .org b{{display:block;font-size:9.5px;font-weight:700;color:var(--dk);letter-spacing:.2px}}
+.ph .org span{{font-size:7.5px;color:var(--gray);letter-spacing:.4px;text-transform:uppercase}}
+.ph .doc{{font-size:7.5px;color:var(--gray);letter-spacing:.5px;text-transform:uppercase;text-align:right}}
+.pc{{flex:1 1 auto;overflow:hidden}}
+.pf{{flex:0 0 auto;display:flex;justify-content:space-between;align-items:center;padding-top:7px;margin-top:10px;border-top:1px solid #cbd5e1;font-size:7.3px;color:var(--gray);letter-spacing:.3px;text-transform:uppercase}}
+.pf b{{color:var(--dk);font-weight:700}}
+.page.cover{{padding:0}}
+.cover{{width:210mm;height:297mm;background:#fff;color:var(--dk);display:flex;flex-direction:column;position:relative;overflow:hidden}}
+.cover-dots{{position:absolute;top:0;right:0;width:260px;height:260px;background-image:radial-gradient(circle, var(--accent) 1.7px, transparent 1.7px);background-size:12px 12px;-webkit-mask-image:linear-gradient(225deg, #000 30%, transparent 78%);mask-image:linear-gradient(225deg, #000 30%, transparent 78%);opacity:.6}}
+.cover-main{{flex:1;display:flex;flex-direction:column;align-items:center;text-align:center;justify-content:center;padding:0 20mm 40mm 32mm;position:relative;z-index:1}}
+.cover-label{{font-size:10.5px;letter-spacing:2.6px;text-transform:uppercase;color:var(--accent);margin:20px 0 22px;font-weight:700}}
+.cover h1{{font-family:'Playfair Display',Georgia,serif;font-size:44px;font-weight:800;line-height:1.15;color:var(--dk);margin-bottom:18px}}
+.cover-line{{width:76px;height:3px;background:var(--accent);margin:0 0 22px}}
+.cover .subtitle{{font-size:13.5px;font-weight:700;color:var(--dk);opacity:.72;max-width:480px;line-height:1.55;margin-bottom:36px}}
+.cover-meta{{display:flex;align-items:stretch;font-size:9px;letter-spacing:1px;text-transform:uppercase;color:var(--gray)}}
+.cover-meta .item{{display:flex;flex-direction:column;align-items:center;gap:9px;padding:0 28px}}
+.cover-meta .div{{width:1px;background:var(--line);align-self:stretch;margin:3px 0}}
+.cover-meta .icon-badge{{width:44px;height:44px;border-radius:50%;border:1.6px solid var(--accent);color:var(--accent);display:flex;align-items:center;justify-content:center}}
+.cover-meta strong{{display:block;color:var(--dk);font-weight:800;font-size:12.5px;letter-spacing:.2px;text-transform:uppercase;white-space:nowrap;margin-bottom:2px}}
+.cover-illustration{{flex:0 0 auto;position:relative;width:100%;z-index:0;line-height:0}}
+.sec-title{{display:flex;align-items:baseline;justify-content:space-between;margin-bottom:3px}}
+.sec-title h2{{font-family:'Playfair Display',Georgia,serif;font-size:17px;font-weight:700;color:var(--dk)}}
+.sec-title span{{font-size:9px;letter-spacing:2px;text-transform:uppercase;color:var(--gray)}}
+.sec-desc{{font-size:10.5px;color:var(--gray);margin-bottom:12px;line-height:1.5}}
+.insights-grid{{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px}}
+.insight-card{{border:1px solid var(--line);border-radius:6px;padding:12px 15px}}
+.insight-card-head{{display:flex;align-items:center;gap:8px;margin-bottom:6px}}
+.insight-num{{flex:0 0 auto;display:inline-flex;align-items:center;justify-content:center;width:24px;height:24px;background:var(--dk);color:var(--accent);font-size:11px;font-weight:700;border-radius:50%}}
+.insight-card h3{{font-size:12.5px;font-weight:700;color:var(--dk)}}
+.insight-card p{{font-size:10.3px;color:#475569;line-height:1.42}}
+.insight-method{{display:flex;gap:6px;align-items:flex-start;margin-top:7px;padding:6px 9px;background:#F1F0EB;border-radius:5px;font-size:8.3px;color:#64748b;line-height:1.45;color:var(--gray)}}
+.insight-method.on-dark{{background:rgba(255,255,255,.08);color:rgba(255,255,255,.6)}}
+.method-label{{font-weight:800;text-transform:uppercase;letter-spacing:.04em;color:#475569;font-size:7.6px;margin-right:4px}}
+.insight-method.on-dark .method-label{{color:rgba(255,255,255,.85)}}
+.tag-up,.trend-up{{color:var(--red);font-weight:700}}
+.tag-down,.trend-dn{{color:var(--green);font-weight:700}}
+.tag-district{{font-weight:600;color:var(--dk)}}
+.summary-box{{background:var(--dk);color:#fff;padding:13px 18px;border-radius:6px;font-size:11px;line-height:1.5}}
+.summary-box strong{{color:var(--accent)}}
+table{{width:100%;border-collapse:collapse;font-size:10px;table-layout:fixed}}
+thead{{background:var(--dk);color:#fff}}
+th{{padding:4px 3px;font-weight:600;text-align:left;font-size:8px;letter-spacing:.3px;text-transform:uppercase;line-height:1.2}}
+td{{padding:4px 3px;border-bottom:1px solid #eee;vertical-align:top}}
+tr:nth-child(even){{background:#faf9f7}}
+.wk-count-tbl{{font-size:7.6px;table-layout:fixed}}
+.wk-count-tbl th{{padding:6px 2px;font-size:6.8px;white-space:normal;line-height:1.25}}
+.wk-count-tbl td{{padding:6.5px 2px}}
+.wk-count-tbl .wk-label{{font-weight:600;text-align:left;white-space:normal;line-height:1.22;font-size:7.6px;padding-right:4px}}
+.num{{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}}
+.tbl-block{{margin-bottom:14px}}
+.tbl-h{{font-size:11.5px;font-weight:700;color:var(--dk);margin-bottom:2px}}
+.tbl-d{{font-size:9px;color:var(--gray);margin-bottom:6px}}
+.chart-wrap{{border:1px solid var(--line);border-radius:6px;padding:8px 10px 4px;margin-bottom:10px}}
+.chart-legend{{display:flex;align-items:center;gap:6px;font-size:8.3px;color:var(--gray);margin-top:2px}}
+.chart-legend .dot{{width:7px;height:7px;border-radius:50%;display:inline-block}}
+.crime-grid{{display:flex;flex-direction:column;gap:12px}}
+.crime-card{{border:1px solid var(--line);border-radius:6px;overflow:hidden}}
+.crime-head{{display:flex;align-items:center;gap:10px;padding:9px 14px;background:#faf9f7;border-bottom:1px solid var(--line)}}
+.crime-head h3{{font-size:13.5px;font-weight:700}}
+.badge{{font-size:9.5px;font-weight:700;padding:3px 10px;border-radius:10px}}
+.badge-up{{background:rgba(192,57,43,.1);color:var(--red)}}
+.badge-down{{background:rgba(39,133,74,.1);color:var(--green)}}
+.badge-flat{{background:rgba(100,116,139,.1);color:var(--gray)}}
+.crime-body{{padding:11px 14px 13px}}
+.cat-chart{{margin-bottom:9px}}
+.crime-districts{{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;font-size:10px;margin-bottom:9px}}
+.dist-col h4{{font-size:8.3px;text-transform:uppercase;letter-spacing:.6px;color:var(--gray);margin-bottom:4px;font-weight:600}}
+.dist-row{{display:flex;justify-content:space-between;padding:1.5px 0}}
+.rising{{font-size:9.8px;color:#475569;line-height:1.5}}
+.rising b{{color:var(--dk)}}
+.district-tbl th{{font-size:7px;padding:3px 2px}}
+.district-tbl td{{font-size:8px;padding:3px 2px}}
+.district-tbl .dn{{font-weight:600;color:var(--dk)}}
+.district-tbl .pct-max{{background:rgba(192,57,43,.12);color:var(--red);font-weight:800;border-radius:3px}}
+"""
+
+
+# ═══════════════════════════════════════════════════════════════════════
+# Small helpers
+# ═══════════════════════════════════════════════════════════════════════
+def _page_header():
+    return (
+        f'<div class="ph"><img src="{CSU_LOGO}"><div class="org">'
+        f"<b>Chief Minister's Crime Surveillance Unit (CSU)</b><span>Government of the Punjab</span></div>"
+        f'<div class="doc">{DOC_LABEL}</div></div>'
+    )
+
+
+def _page_footer(page_num):
+    return (
+        f'<div class="pf"><span><b>Chief Minister\'s Crime Surveillance Unit (CSU)</b></span>'
+        f"<span>Additional Secretary (Law &amp; Order)</span>"
+        f'<span>Page {page_num} of __TOTAL__</span></div>'
+    )
+
+
+def _wrap(content_html, page_num):
+    return f'<section class="page">{_page_header()}<div class="pc">{content_html}</div>{_page_footer(page_num)}</section>'
+
+
+def _trend_chart_svg(weekly):
+    """Line chart for the overall daily-average weekly trend -- the chart
+    the supplied design was missing next to its "Is Crime Rising or
+    Falling" table. Same navy/gold palette as the rest of this report."""
+    avgs = [round(w["week_total"] / w["n_days"], 1) if w["n_days"] else 0 for w in weekly]
+    CW, CH = 700, 132
+    PAD_L, PAD_R, PAD_T, PAD_B = 8, 8, 16, 22
+    plot_w, plot_h = CW - PAD_L - PAD_R, CH - PAD_T - PAD_B
+    lo_v = min(avgs) * 0.85 if avgs else 0
+    hi_v = max(avgs) * 1.15 if avgs else 1
+
+    def xy(i, v):
+        x = PAD_L + (plot_w * i / max(len(avgs) - 1, 1))
+        y = PAD_T + plot_h * (1 - (v - lo_v) / (hi_v - lo_v if hi_v != lo_v else 1))
+        return x, y
+
+    pts = [xy(i, v) for i, v in enumerate(avgs)]
+    path_d = "M " + " L ".join(f"{x:.1f},{y:.1f}" for x, y in pts)
+    area_d = path_d + f" L {pts[-1][0]:.1f},{PAD_T+plot_h} L {pts[0][0]:.1f},{PAD_T+plot_h} Z"
+    dots = "".join(
+        f'<circle cx="{x:.1f}" cy="{y:.1f}" r="3.1" fill="#c8a45c" stroke="#0c1b2a" stroke-width="1"/>'
+        for x, y in pts
+    )
+    labels = "".join(
+        f'<text x="{pts[i][0]:.1f}" y="{CH-6}" font-size="7" fill="#64748b" text-anchor="middle">'
+        f'W{int(w["week_num"])}{"*" if w["n_days"]<7 else ""}</text>'
+        f'<text x="{pts[i][0]:.1f}" y="{pts[i][1]-8:.1f}" font-size="7.3" fill="#0c1b2a" font-weight="700" text-anchor="middle">{avgs[i]}</text>'
+        for i, w in enumerate(weekly)
+    )
+    return (
+        f'<svg viewBox="0 0 {CW} {CH}" width="100%" height="{CH}">'
+        f'<path d="{area_d}" fill="#0c1b2a" opacity="0.07"/>'
+        f'<path d="{path_d}" fill="none" stroke="#0c1b2a" stroke-width="2"/>{dots}{labels}</svg>'
+    )
+
+
+# ═══════════════════════════════════════════════════════════════════════
+# Page 1: Cover
+# ═══════════════════════════════════════════════════════════════════════
+def _cover_page(data_period, reporting_day, n_days):
+    return f"""
+<section class="page cover">
+<div class="cover-dots"></div>
+<div class="cover-main">
+<div style="display:flex;align-items:center;gap:18px;margin-bottom:10px">
+<img src="{GOVT_LOGO}" style="height:78px;width:auto">
+<div style="width:1px;height:56px;background:var(--line)"></div>
+<img src="{CSU_LOGO}" style="height:58px;width:auto;object-fit:contain">
+</div>
+<div class="cover-label">Chief Minister's Crime Surveillance Unit &middot; Government of Punjab</div>
+<h1>Crime Analytics Punjab</h1>
+<div class="cover-line"></div>
+<p class="subtitle">Comparative Analysis of Provincial Crime Data &mdash; a comprehensive view of crime trends, district-level patterns, and emerging concerns of Punjab for Executive oversight.</p>
+<div class="cover-meta">
+<div class="item"><div class="icon-badge">{_ICON_CALENDAR}</div><span><strong>{esc(data_period)}</strong>Reporting Period ({n_days} days)</span></div>
+<div class="div"></div>
+<div class="item"><div class="icon-badge">{_ICON_CALENDAR}</div><span><strong>{esc(reporting_day)}</strong>Issue Date</span></div>
+<div class="div"></div>
+<div class="item"><div class="icon-badge">{_ICON_SHIELD}</div><span><strong>Official &middot; Restricted</strong>Classification</span></div>
+</div>
+</div>
+<div class="cover-illustration">{_COVER_BUILDING_SVG}</div>
+</section>
+"""
+
+
+# ═══════════════════════════════════════════════════════════════════════
+# Page 2: Key Insights — same data/logic as the other two Crime Analytics
+# reports (imported), rendered as the numbered card grid + closing summary
+# box from the supplied design instead of the callout-list style.
+# ═══════════════════════════════════════════════════════════════════════
+def _key_insights_page(start_date, end_date, weekly_context, page_num):
+    insights = _build_default_insights(start_date, end_date, weekly_context)
+    grid_items, closing = (insights[:-1], insights[-1]) if insights else ([], None)
+
+    def method_box(tag, on_dark=False):
+        note = INSIGHT_METHODOLOGY.get(tag)
+        if not note:
+            return ""
+        cls = "insight-method on-dark" if on_dark else "insight-method"
+        return (
+            f'<div class="{cls}">{_METHOD_ICON}'
+            f'<div><span class="method-label">Methodology</span>{note}</div></div>'
+        )
+
+    cards = "".join(
+        f'<div class="insight-card"><div class="insight-card-head"><div class="insight-num">{i + 1}</div>'
+        f"<h3>{esc(tag)}</h3></div><p>{_highlight_keywords(text)}</p>{method_box(tag)}</div>"
+        for i, (color, tag, text) in enumerate(grid_items)
+    )
+    summary = ""
+    if closing:
+        _, tag, text = closing
+        summary = f'<div class="summary-box"><strong>{esc(tag)} &mdash;</strong> {_highlight_keywords(text)}{method_box(tag, on_dark=True)}</div>'
+
+    content = f"""
+<div class="sec-title"><h2>Key Insights</h2><span>Section 01</span></div>
+<p class="sec-desc">At a glance: the state of crime across Punjab for this reporting period.</p>
+<div class="insights-grid">{cards}</div>
+{summary}
+"""
+    return _wrap(content, page_num)
+
+
+# ═══════════════════════════════════════════════════════════════════════
+# Page 3: Crime Trend Overview — Week-by-Week Case Count (all 14
+# categories, calendar-locked weeks) + the weekly rising/falling table,
+# now WITH the line chart the supplied design was missing.
+# ═══════════════════════════════════════════════════════════════════════
+# Tight month codes for the Week-by-Week Case Count header only (matches
+# the supplied design's abbreviation scheme, e.g. "M·W1", "Jn·W2").
+_MONTH_CODE = {
+    "Jan": "Ja", "Feb": "F", "Mar": "Mr", "Apr": "Ap", "May": "M", "Jun": "Jn",
+    "Jul": "Jl", "Aug": "A", "Sep": "S", "Oct": "O", "Nov": "N", "Dec": "D",
+}
+# The simple 5-column rising/falling table is still capped to a trailing
+# window -- it's a fixed one-page section with no doc-page.js
+# auto-pagination, and would eventually overflow as weeks keep
+# accumulating for years. The Week-by-Week Case Count table below is NOT
+# capped: every week from the start of the data period is shown, with
+# column widths computed to fit however many there are (see colgroup in
+# _weekly_case_count_page), since the whole point of that table is to see
+# the complete May-onward history at a glance.
+MAX_WEEKS_SHOWN = 20
+
+
+def _short_week_label(label):
+    month, wk = label.split(" ")
+    return f'{_MONTH_CODE.get(month, month)}&middot;{wk.replace("Wk", "W")}'
+
+
+def _weekly_case_count_page(start_date, end_date, page_num):
+    weeks, per_category = _weekly_by_category_data(start_date, end_date)
+    complete_idxs = [i for i, w in enumerate(weeks) if w["is_complete"]]
+    latest_idx = complete_idxs[-1] if complete_idxs else None
+
+    # Column widths are computed, not percentage-guessed, so every week from
+    # the start of the data period fits without crowding or overlap no
+    # matter how many weeks there are. Page content width = 210mm page -
+    # 28mm left margin (spiral-binding allowance) - 15mm right margin.
+    CONTENT_W = 210 - 28 - 15
+    LABEL_W = 21
+    n_data_cols = len(weeks) + 2  # weeks + Typical + Trend
+    col_w = (CONTENT_W - LABEL_W) / max(n_data_cols, 1)
+    colgroup = f'<col style="width:{LABEL_W}mm">' + f'<col style="width:{col_w:.2f}mm">' * n_data_cols
+
+    week_headers = "".join(f'<th class="num">{_short_week_label(w["label"])}</th>' for w in weeks)
+    trs = ""
+    for col, _ in ALL_CATEGORIES:
+        series = per_category[col]
+        complete_vals = [series[i] for i in complete_idxs]
+        typical = sum(complete_vals) / len(complete_vals) if complete_vals else 0
+        if latest_idx is not None:
+            trend_cls, trend_label = _week_trend_badge(series[latest_idx], typical)
+        else:
+            trend_cls, trend_label = "fl", "&#9668;&#9658;0%"
+        badge_css = {"up": "tag-up", "dn": "tag-down", "fl": ""}[trend_cls]
+        cells = "".join(f'<td class="num">{"-" if v is None else v}</td>' for v in series)
+        trs += (
+            f'<tr><td class="wk-label">{SHORT_LABELS[col]}</td>{cells}'
+            f'<td class="num">{typical:.1f}</td><td class="num {badge_css}">{trend_label}</td></tr>'
+        )
+
+    content = f"""
+<div class="sec-title"><h2>Crime Trend Overview</h2><span>Section 02</span></div>
+<p class="sec-desc">Typical is the average of every complete week on file. We compare the most recent complete week against Typical to decide whether each crime is rising or falling.</p>
+<div class="tbl-block">
+<div class="tbl-h">Week-by-Week Case Count</div>
+<div class="tbl-d">Every calendar-month week from the start of the data period (week 1 = days 1&ndash;7, etc). * marks a partial week (fewer than 7 days on file).</div>
+<table class="wk-count-tbl">
+<colgroup>{colgroup}</colgroup>
+<thead><tr><th>Crime Category</th>{week_headers}<th class="num">Typ.</th><th class="num">Trend</th></tr></thead>
+<tbody>{trs}</tbody>
+</table>
+</div>
+"""
+    return _wrap(content, page_num)
+
+
+def _rising_falling_page(start_date, end_date, page_num):
+    weekly_full = _weekly_trend(start_date, end_date)
+    truncated = len(weekly_full) > MAX_WEEKS_SHOWN
+    weekly = weekly_full[-MAX_WEEKS_SHOWN:] if truncated else weekly_full
+    avgs_full = [round(w["week_total"] / w["n_days"], 1) if w["n_days"] else 0 for w in weekly_full]
+    avgs = avgs_full[-MAX_WEEKS_SHOWN:] if truncated else avgs_full
+    offset = len(weekly_full) - len(weekly)
+
+    week_rows = ""
+    for i, w in enumerate(weekly):
+        full_i = i + offset
+        badge = _change_badge(avgs_full[full_i], avgs_full[full_i - 1]) if full_i > 0 else '<span style="color:var(--gray)">start</span>'
+        badge = badge.replace('class="trend-up"', 'class="tag-up"').replace('class="trend-dn"', 'class="tag-down"').replace('class="trend-fl"', '')
+        partial = "*" if w["n_days"] < 7 else ""
+        week_rows += (
+            f'<tr><td style="font-weight:600">Week {int(w["week_num"])}{partial}</td><td>{w["week_start"]} to {w["week_end"]}</td>'
+            f'<td class="num">{w["week_total"]}</td><td class="num">{avgs[i]}</td><td class="num">{badge}</td></tr>'
+        )
+    typical_avg, latest_avg, overall_pct, direction = _typical_vs_latest(weekly_full)
+    complete_weeks = [w for w in weekly_full if w["n_days"] >= 7]
+    latest_label = f'Week {int(complete_weeks[-1]["week_num"])}' if complete_weeks else "n/a"
+    note = f' Showing the most recent {MAX_WEEKS_SHOWN} of {len(weekly_full)} weeks on file.' if truncated else ""
+
+    chart_svg = _trend_chart_svg(weekly)
+
+    content = f"""
+<div class="sec-title"><h2>Crime Trend Overview</h2><span>Section 02 (cont.)</span></div>
+<div class="tbl-block">
+<div class="tbl-h">Is Crime Rising or Falling &mdash; Daily Average</div>
+<div class="tbl-d">Average cases per day, every recorded category combined, vs the previous complete week.{note}</div>
+<div class="chart-wrap">{chart_svg}<div class="chart-legend"><span class="dot" style="background:#c8a45c"></span>Daily average, all categories combined &mdash; gold marker = week value, label = weeks from data start (Week 1 onward)</div></div>
+<table style="font-size:8.7px">
+<thead><tr><th>Week</th><th>Dates</th><th class="num">Total</th><th class="num">Avg/Day</th><th class="num">Change</th></tr></thead>
+<tbody>{week_rows}</tbody>
+</table>
+</div>
+<div class="summary-box"><strong>Overall Direction &mdash;</strong> The most recent complete week on file ({latest_label}) averaged {latest_avg} cases per day, against a typical week of {typical_avg}. The province is <strong>{direction} ({overall_pct:+.0f}% vs typical)</strong>.</div>
+"""
+    return _wrap(content, page_num)
+
+
+# ═══════════════════════════════════════════════════════════════════════
+# Pages 4+: Detail of Each Crime — 3 cards per page, same data as
+# crime_analytics_monthly.py's per-category rising-district detection.
+# ═══════════════════════════════════════════════════════════════════════
+def _category_chart_svg(weeks, series, trend_cls):
+    """Compact sparkline-style weekly trend for one crime category, shown
+    inside its detail card -- the per-crime chart the supplied design
+    didn't have, alongside the province-wide one added to Section 02."""
+    idxs = [i for i, w in enumerate(weeks) if w["has_data"]]
+    if len(idxs) < 2:
+        return ""
+    vals = [series[i] for i in idxs]
+    labels = [weeks[i]["label"] for i in idxs]
+    line_color = {"up": "#c0392b", "dn": "#27854a", "fl": "#0c1b2a"}[trend_cls]
+
+    CW, CH = 700, 68
+    PAD_L, PAD_R, PAD_T, PAD_B = 22, 22, 8, 14
+    plot_w, plot_h = CW - PAD_L - PAD_R, CH - PAD_T - PAD_B
+    lo_v, hi_v = min(vals) * 0.85, max(vals) * 1.15
+    if hi_v == lo_v:
+        hi_v = lo_v + 1
+
+    def xy(i, v):
+        x = PAD_L + (plot_w * i / max(len(vals) - 1, 1))
+        y = PAD_T + plot_h * (1 - (v - lo_v) / (hi_v - lo_v))
+        return x, y
+
+    pts = [xy(i, v) for i, v in enumerate(vals)]
+    path_d = "M " + " L ".join(f"{x:.1f},{y:.1f}" for x, y in pts)
+    area_d = path_d + f" L {pts[-1][0]:.1f},{PAD_T+plot_h} L {pts[0][0]:.1f},{PAD_T+plot_h} Z"
+    dots = "".join(f'<circle cx="{x:.1f}" cy="{y:.1f}" r="2.2" fill="{line_color}"/>' for x, y in pts)
+    # Label every week for <=10 points, every other week beyond that, so the
+    # axis stays legible as more weeks accumulate.
+    step = 1 if len(idxs) <= 10 else 2
+    tick_labels = "".join(
+        f'<text x="{pts[i][0]:.1f}" y="{CH-3}" font-size="6.4" fill="#94a3b8" text-anchor="middle">{esc(labels[i]).replace(" ", "·")}</text>'
+        for i in range(0, len(idxs), step)
+    )
+    return (
+        f'<svg viewBox="0 0 {CW} {CH}" width="100%" height="{CH}">'
+        f'<path d="{area_d}" fill="{line_color}" opacity="0.06"/>'
+        f'<path d="{path_d}" fill="none" stroke="{line_color}" stroke-width="1.6"/>{dots}{tick_labels}</svg>'
+    )
+
+
+def _crime_card(col, label, start_date, end_date, weeks, per_category, complete_idxs, latest_idx, template):
+    maxrows, minrows = _minmax5(col, start_date, end_date)
+    chronicrows = _chronic5(col, start_date, end_date)
+
+    series = per_category[col]
+    complete_vals = [series[i] for i in complete_idxs]
+    typical = sum(complete_vals) / len(complete_vals) if complete_vals else 0
+    if latest_idx is not None:
+        trend_cls, trend_label = _week_trend_badge(series[latest_idx], typical)
+    else:
+        trend_cls, trend_label = "fl", "&#9668;&#9658; 0%"
+    badge_css = {"up": "badge-up", "dn": "badge-down", "fl": "badge-flat"}[trend_cls]
+    heading_color = "style=\"color:var(--red)\"" if trend_cls == "up" else ("style=\"color:var(--green)\"" if trend_cls == "dn" else "")
+
+    def col3(rows, value_key):
+        return "".join(f'<div class="dist-row"><span>{esc(r["name_en"])}</span><strong>{r[value_key]}</strong></div>' for r in rows[:3])
+
+    rising = _rising_districts(col, complete_idxs, latest_idx, template, start_date, end_date)
+    if rising:
+        rising_text = ", ".join(f"{esc(dname)} (+{dpct:.0f}%)" for dname, dval, dpct, dtyp in rising[:5])
+    else:
+        rising_text = "No district shows a meaningful rise in this category for the latest complete week."
+
+    chart_svg = _category_chart_svg(weeks, series, trend_cls)
+    chart_html = f'<div class="cat-chart">{chart_svg}</div>' if chart_svg else ""
+
+    return f"""
+<div class="crime-card"><div class="crime-head"><h3 {heading_color}>{esc(label)}</h3><span class="badge {badge_css}">{trend_label}</span></div><div class="crime-body">
+{chart_html}
+<div class="crime-districts">
+<div class="dist-col"><h4>Most Cases</h4>{col3(maxrows, "v")}</div>
+<div class="dist-col"><h4>Chronic</h4>{col3(chronicrows, "days_with_cases")}</div>
+<div class="dist-col"><h4>Fewest</h4>{col3(minrows, "v")}</div>
+</div>
+<div class="rising"><b>Rising:</b> {rising_text}</div>
+</div></div>
+"""
+
+
+def _detail_pages(start_date, end_date, first_page_num):
+    weeks, per_category = _weekly_by_category_data(start_date, end_date)
+    complete_idxs = [i for i, w in enumerate(weeks) if w["is_complete"]]
+    latest_idx = complete_idxs[-1] if complete_idxs else None
+    template = _week_template(end_date)
+
+    cards = [
+        _crime_card(col, label, start_date, end_date, weeks, per_category, complete_idxs, latest_idx, template)
+        for col, label in CARD_CATEGORIES
+    ]
+
+    note = (
+        '<div style="margin-top:16px" class="summary-box"><strong>Note &mdash;</strong> '
+        "Dacoity/Robbery with Rape is not shown as its own card (0&ndash;1 cases per week throughout the period); "
+        "it is reported in the Week-by-Week Case Count table only.</div>"
+    )
+
+    pages = []
+    CARDS_PER_PAGE = 3
+    groups = [cards[i:i + CARDS_PER_PAGE] for i in range(0, len(cards), CARDS_PER_PAGE)]
+    for gi, group in enumerate(groups):
+        is_last = gi == len(groups) - 1
+        content = (
+            f'<div class="sec-title"><h2>Detail of Each Crime</h2><span>Section 03{" (cont.)" if gi > 0 else ""}</span></div>'
+            + ('<p class="sec-desc">Weekly trend, highest/lowest/most chronic districts, and which districts are driving the rise, for every recorded category.</p>' if gi == 0 else "")
+            + f'<div class="crime-grid">{"".join(group)}</div>'
+            + (note if is_last else "")
+        )
+        pages.append(_wrap(content, first_page_num + gi))
+    return "".join(pages), len(groups)
+
+
+# ═══════════════════════════════════════════════════════════════════════
+# Final page: Each District's Crime Mix & Contribution to Punjab
+# ═══════════════════════════════════════════════════════════════════════
+def _composition_page(start_date, end_date, page_num):
+    other_sql = "+".join(f"c.{c}" for c in OTHER_COLUMNS)
+    sql = f"""
+        SELECT d.name_en,
+          COALESCE(SUM(c.murder),0) AS murder, COALESCE(SUM(c.robbery),0) AS robbery,
+          COALESCE(SUM(c.child_abuse),0) AS child_abuse, COALESCE(SUM(c.rape),0) AS rape,
+          COALESCE(SUM(c.gang_rape),0) AS gang_rape, COALESCE(SUM(c.snatching_jhappata),0) AS snatching,
+          COALESCE(SUM({other_sql}),0) AS other,
+          COALESCE(SUM({all_crime_sum_sql('c')}),0) AS total
+        FROM crime_daily c JOIN districts d ON d.id = c.district_id
+        WHERE {DISTRICT_FILTER_SQL} AND c.report_date BETWEEN %s AND %s
+        GROUP BY d.name_en ORDER BY total DESC
+    """
+    # "Other" is built from every category outside the 6 headline ones, which
+    # includes Road Accident Casualties and Religious Issues -- so Total here
+    # has to count all 14 categories too (all_crime_sum_sql), not just the 12
+    # "real crime" ones, or the seven columns would add up to more than 100%.
+    rows = db.query(sql, (start_date, end_date))
+    grand_total = sum(r["total"] for r in rows) or 1
+
+    # Per-column percentage first, so the highest-percentage district in each
+    # of the four sensitive categories can be picked out and highlighted --
+    # a district can be small in raw terms yet still be where that crime is
+    # most concentrated relative to its own caseload.
+    pct_rows = []
+    for r in rows:
+        t = r["total"] or 1
+        pct_rows.append(dict(
+            r, t=t,
+            murder_pct=r["murder"] / t * 100, robbery_pct=r["robbery"] / t * 100,
+            child_abuse_pct=r["child_abuse"] / t * 100, rape_pct=r["rape"] / t * 100,
+            gang_rape_pct=r["gang_rape"] / t * 100, snatching_pct=r["snatching"] / t * 100,
+            other_pct=r["other"] / t * 100,
+        ))
+    HIGHLIGHT_COLS = ("murder_pct", "rape_pct", "gang_rape_pct", "child_abuse_pct")
+    max_idx = {col: max(range(len(pct_rows)), key=lambda i: pct_rows[i][col]) for col in HIGHLIGHT_COLS} if pct_rows else {}
+
+    def cell(i, col, label_pct):
+        cls = "num pct-max" if max_idx.get(col) == i else "num"
+        return f'<td class="{cls}">{label_pct:.1f}%</td>'
+
+    trs = ""
+    for i, r in enumerate(pct_rows):
+        trs += (
+            f'<tr><td>{i+1}</td><td class="dn">{esc(r["name_en"])}</td>'
+            f'{cell(i, "murder_pct", r["murder_pct"])}'
+            f'<td class="num">{r["robbery_pct"]:.1f}%</td>'
+            f'{cell(i, "child_abuse_pct", r["child_abuse_pct"])}'
+            f'{cell(i, "rape_pct", r["rape_pct"])}'
+            f'{cell(i, "gang_rape_pct", r["gang_rape_pct"])}'
+            f'<td class="num">{r["snatching_pct"]:.1f}%</td>'
+            f'<td class="num">{r["other_pct"]:.1f}%</td>'
+            f'<td class="num" style="font-weight:700">{r["total"]}</td>'
+            f'<td class="num" style="font-weight:700">{r["total"]/grand_total*100:.1f}%</td></tr>'
+        )
+
+    content = f"""
+<div class="sec-title"><h2>Each District's Crime Mix &amp; Contribution to Punjab</h2><span>Section 04</span></div>
+<p class="sec-desc">The first seven columns break each district's own total into categories (adding to 100% per row). "Other" covers remaining categories, including Road Accident Casualties and Religious Issues. The last column is each district's share of every case reported in Punjab. Highlighted cells mark the district where Murder, Rape, Gang Rape or Child Abuse makes up the largest share of that district's own caseload.</p>
+<table class="district-tbl">
+<thead><tr><th style="width:4%">#</th><th style="width:16%">District</th><th class="num">Murder</th><th class="num">Robbery</th><th class="num">Child Ab.</th><th class="num">Rape</th><th class="num">Gang Rape</th><th class="num">Snatch.</th><th class="num">Other</th><th class="num">Total</th><th class="num">% Punjab</th></tr></thead>
+<tbody>{trs}</tbody>
+</table>
+"""
+    return _wrap(content, page_num)
+
+
+# ═══════════════════════════════════════════════════════════════════════
+# Assemble
+# ═══════════════════════════════════════════════════════════════════════
+def generate(start_date=None, end_date=None, reporting_day=None, header_note=None, output="pdf", **_):
+    earliest, latest = _date_bounds()
+    start_date = _to_date(start_date) if start_date else earliest
+    end_date = _to_date(end_date) if end_date else latest
+    reporting_day = reporting_day or date.today().strftime("%d %b %Y")
+    n_days = (end_date - start_date).days + 1
+    data_period = f'{start_date.strftime("%d %b").lstrip("0")} – {end_date.strftime("%d %B %Y").lstrip("0")}'
+
+    weekly_context = _weekly_context(start_date, end_date)
+
+    page_num = 2
+    p_insights = _key_insights_page(start_date, end_date, weekly_context, page_num)
+    page_num += 1
+    p_case_count = _weekly_case_count_page(start_date, end_date, page_num)
+    page_num += 1
+    p_rising_falling = _rising_falling_page(start_date, end_date, page_num)
+    page_num += 1
+    p_detail, n_detail_pages = _detail_pages(start_date, end_date, page_num)
+    page_num += n_detail_pages
+    p_composition = _composition_page(start_date, end_date, page_num)
+
+    total_pages = page_num
+    p_cover = _cover_page(data_period, reporting_day, n_days)
+
+    all_html = p_cover + p_insights + p_case_count + p_rising_falling + p_detail + p_composition
+    all_html = all_html.replace("__TOTAL__", str(total_pages))
+
+    html = f"""<!doctype html>
+<html><head><meta charset="utf-8" /><title>Crime Analytics Punjab</title><style>{CSS}</style></head>
+<body>
+{all_html}
+</body></html>
+"""
+    return save_html(html) if output == "html" else render_pdf(html)
