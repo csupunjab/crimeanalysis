@@ -216,8 +216,8 @@ tr:nth-child(even){{background:#faf9f7}}
 .tbl-h{{font-size:11.5px;font-weight:700;color:var(--dk);margin-bottom:2px}}
 .tbl-d{{font-size:9px;color:var(--gray);margin-bottom:6px}}
 .rot-page-center{{height:100%;display:flex;align-items:center;justify-content:center;padding-top:14mm}}
-.rot-outer{{width:163mm;height:222mm;position:relative;flex:0 0 auto}}
-.rot-inner{{position:absolute;width:222mm;height:163mm;top:50%;left:50%;transform:translate(-50%,-50%) rotate(90deg)}}
+.rot-outer{{width:158mm;height:216mm;position:relative;flex:0 0 auto;overflow:hidden}}
+.rot-inner{{position:absolute;top:0;left:0;width:216mm;height:158mm;transform-origin:top left;transform:rotate(90deg) translateY(-100%)}}
 .chart-wrap{{border:1px solid var(--line);border-radius:6px;padding:8px 10px 4px;margin-bottom:20px}}
 .chart-legend{{display:flex;align-items:center;gap:6px;font-size:8.3px;color:var(--gray);margin-top:2px}}
 .chart-legend .dot{{width:7px;height:7px;border-radius:50%;display:inline-block}}
@@ -580,8 +580,8 @@ def _full_week_label(label):
 # pre-rotation dimensions -- CONTENT_W becomes its rotated visual HEIGHT
 # (borrowing the page's vertical space), CONTENT_H becomes its rotated
 # visual WIDTH (must still fit the ~167mm portrait content width).
-CONTENT_W = 222  # mm -- pre-rotation width, becomes visual height after rotation
-CONTENT_H = 163  # mm -- pre-rotation height, becomes visual width after rotation
+CONTENT_W = 216  # mm -- pre-rotation width, becomes visual height after rotation
+CONTENT_H = 158  # mm -- pre-rotation height, becomes visual width after rotation
 
 
 def _weekly_case_count_page(start_date, end_date, page_num):
