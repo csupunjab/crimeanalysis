@@ -186,14 +186,14 @@ body{{font-family:-apple-system,'Segoe UI',system-ui,sans-serif;color:#1e293b;li
 .sec-title{{display:flex;align-items:baseline;justify-content:space-between;margin-bottom:3px}}
 .sec-title h2{{font-family:'Playfair Display',Georgia,serif;font-size:17px;font-weight:700;color:var(--dk)}}
 .sec-title span{{font-size:9px;letter-spacing:2px;text-transform:uppercase;color:var(--gray)}}
-.sec-desc{{font-size:10.5px;color:var(--gray);margin-bottom:9px;line-height:1.5}}
-.insights-grid{{display:grid;grid-template-columns:1fr 1fr;gap:7px;margin-bottom:7px}}
-.insight-card{{border:1px solid var(--line);border-radius:6px;padding:9px 14px;display:flex;gap:9px;min-height:140px}}
-.insight-num{{flex:0 0 auto;display:inline-flex;align-items:center;justify-content:center;width:24px;height:24px;background:var(--dk);color:var(--accent);font-size:11.5px;font-weight:700;border-radius:50%}}
+.sec-desc{{font-size:10.5px;color:var(--gray);margin-bottom:6px;line-height:1.5}}
+.insights-grid{{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:5px}}
+.insight-card{{border:1px solid var(--line);border-radius:6px;padding:8px 13px;display:flex;gap:9px;min-height:124px}}
+.insight-num{{flex:0 0 auto;display:inline-flex;align-items:center;justify-content:center;width:23px;height:23px;background:var(--dk);color:var(--accent);font-size:11px;font-weight:700;border-radius:50%}}
 .insight-content{{flex:1;min-width:0;display:flex;flex-direction:column}}
-.insight-card h3{{font-size:13.3px;font-weight:700;color:var(--dk);margin-bottom:5px}}
-.insight-card p{{font-size:10.8px;color:#475569;line-height:1.42}}
-.insight-method{{display:flex;gap:6px;align-items:flex-start;margin-top:auto;background:#F1F0EB;border-radius:5px;padding:6px 9px;font-size:8.4px;color:#64748b;line-height:1.4;color:var(--gray);height:82px;box-sizing:border-box}}
+.insight-card h3{{font-size:12.6px;font-weight:700;color:var(--dk);margin-bottom:4px}}
+.insight-card p{{font-size:10.1px;color:#475569;line-height:1.36}}
+.insight-method{{display:flex;gap:6px;align-items:flex-start;margin-top:auto;background:#F1F0EB;border-radius:5px;padding:5px 8px;font-size:7.9px;color:#64748b;line-height:1.32;color:var(--gray);height:74px;box-sizing:border-box}}
 .insight-method.on-dark{{background:rgba(255,255,255,.08);color:rgba(255,255,255,.6)}}
 .method-label{{font-weight:800;text-transform:uppercase;letter-spacing:.04em;color:#475569;font-size:7.6px;margin-right:4px}}
 .insight-method.on-dark .method-label{{color:rgba(255,255,255,.85)}}
