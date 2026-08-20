@@ -9,8 +9,8 @@ import config
 import db
 from reports.common import HEADLINE_CATEGORIES, ALL_CATEGORIES, DISTRICT_FILTER_SQL, save_html, render_pdf_from_file
 from reports import (
-    district_csv, maxmin, safest_districts, pattern_analysis, deep_analysis,
-    category_deepdive, crime_analytics, crime_analytics_monthly, data_science_review,
+    district_csv, safest_districts, pattern_analysis,
+    category_deepdive, crime_analytics_monthly, data_science_review,
     crime_analytics_v2,
 )
 
@@ -23,37 +23,34 @@ CORS(app)
 FRONTEND_DIST = Path(__file__).resolve().parent.parent / "frontend" / "dist"
 
 REPORT_CATALOG = [
-    dict(id="crime_analytics", name="Crime Analytics Punjab", format="pdf",
-         description="The combined report for major meetings: comparative today-vs-usual analysis, weekly up/down trend, per-crime detail, full crime-mix composition, and key insights. Always covers 01 July through the latest day on file, and counts every category including Road Accidents and Religious Issues."),
     dict(id="crime_analytics_monthly", name="Crime Analytics Punjab (Monthly Trend)", format="pdf",
          description="Same report as Crime Analytics Punjab, but section 1 shows total cases per calendar month for every crime type and whether each is rising, falling, or steady month over month, instead of a single day's snapshot. Built for a longer-horizon view; the monthly findings also feed into Key Insights."),
     dict(id="crime_analytics_v2", name="Crime Analytics Punjab (New Design)", format="pdf",
          description="Same Key Insights, weekly trend, per-crime detail, and district composition as Crime Analytics Punjab, in the new dark-navy/gold executive cover-page design. Includes a weekly trend line chart. Always covers the full data history through the latest day on file."),
-    dict(id="deep_analysis", name="Deep Analysis", format="pdf",
-         description="Performance ranking, each district's crime-mix composition (sums to 100%), and week-by-week trend. Real crime only, crime districts only."),
     dict(id="category_deepdive", name="Category Deep Dive", format="pdf",
          description="One page per crime type (Murder, Robbery, Child Abuse, Rape, Gang Rape, Snatching): weekly trend, top divisions, top/bottom 5 districts, plus an overall min/max page."),
     dict(id="pattern_analysis", name="Crime Pattern Analysis", format="pdf",
          description="Chronic districts, biggest one-day jumps, and rising-fast districts, one page per crime type."),
     dict(id="safest_districts", name="Safest Districts", format="pdf",
          description="Lowest-crime districts per crime type, with a Days-On-File caveat for thin-reporting districts."),
-    dict(id="maxmin", name="Max & Min Districts", format="pdf",
-         description="Top 5 highest and top 5 lowest districts, side by side, for every crime type."),
     dict(id="district_csv", name="District-Wise Total Crime (CSV)", format="csv",
          description="All districts x all 14 recorded categories, with a grand total row."),
     dict(id="data_science_review", name="Comprehensive Crime Data Review (Data Science Committee)", format="pdf",
          description="Population-adjusted crime rates using official 2023 census data, hidden-risk districts, statistical outlier detection, international homicide-rate benchmarking (World Bank/UNODC), density analysis, and a composite priority list. Content-first draft, tables and figures only."),
 ]
 
+# crime_analytics (the original combined report), deep_analysis, and maxmin
+# are intentionally not offered here -- superseded by the newer variants
+# above. Their modules are still imported by crime_analytics_monthly.py /
+# crime_analytics_v2.py / data_science_review.py for shared logic, so the
+# files themselves are untouched; they're just no longer directly
+# generatable report choices.
 REPORT_MODULES = {
-    "crime_analytics": crime_analytics,
     "crime_analytics_monthly": crime_analytics_monthly,
     "crime_analytics_v2": crime_analytics_v2,
-    "deep_analysis": deep_analysis,
     "category_deepdive": category_deepdive,
     "pattern_analysis": pattern_analysis,
     "safest_districts": safest_districts,
-    "maxmin": maxmin,
     "district_csv": district_csv,
     "data_science_review": data_science_review,
 }
@@ -169,9 +166,9 @@ def reports_generate():
         return jsonify(error=f"unknown report_type '{report_type}'"), 400
 
     module = REPORT_MODULES[report_type]
-    # crime_analytics and its two variants all default to their own full
+    # The Crime Analytics Punjab variants both default to their own full
     # date range; every other report needs an explicit range from the caller.
-    if report_type not in ("crime_analytics", "crime_analytics_monthly", "crime_analytics_v2") and (not start_date or not end_date):
+    if report_type not in ("crime_analytics_monthly", "crime_analytics_v2") and (not start_date or not end_date):
         return jsonify(error="start_date and end_date are required"), 400
 
     try:
@@ -203,7 +200,7 @@ def reports_default_insights():
     report_type = request.args.get("report_type")
     start_date = request.args.get("start_date")
     end_date = request.args.get("end_date")
-    if report_type not in ("crime_analytics", "crime_analytics_monthly"):
+    if report_type not in ("crime_analytics_monthly",):
         return jsonify(error=f"unsupported report_type '{report_type}'"), 400
     try:
         insights = REPORT_MODULES[report_type].default_insights(start_date, end_date)

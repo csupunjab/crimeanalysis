@@ -93,7 +93,7 @@ export default function App() {
           onToggleDistrict={toggleDistrict}
           onSelectAllDistricts={() => setSelectedDistrictIds(districts.filter(d => !d.exclude_from_analysis).map((d) => d.id))}
           onClearDistricts={() => setSelectedDistrictIds([])}
-          categories={categories.headline}
+          categories={categories.all}
           selectedCategories={selectedCategories}
           onToggleCategory={toggleCategory}
           onRunQuery={runQuery}

@@ -84,7 +84,7 @@ def _page(col, label, start_date, end_date, total_days, reporting_day, data_peri
 
   <div class="callout">
     <b>Reading This Page</b>
-    <p style="margin-top:5px">A district showing "0" total is not automatically confirmed safe &mdash; check its "Days on file" column first. A zero with near-complete reporting for the period is a genuinely verified low-crime finding; a zero with very few days on file simply means that district has thin reporting history, and the true picture is still unknown.</p>
+    <p style="margin-top:5px">A district showing "0" total is not automatically confirmed safe: check its "Days on file" column first. A zero with near-complete reporting for the period is a genuinely verified low-crime finding; a zero with very few days on file simply means that district has thin reporting history, and the true picture is still unknown.</p>
   </div>
 """ + FOOTER
 

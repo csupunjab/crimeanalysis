@@ -110,7 +110,7 @@ def _category_page(col, label, color, idx, total_n, start_date, end_date, report
             else:
                 story += "The weekly pattern has stayed roughly flat over the period."
 
-    return masthead("Deep Analysis", f"{label} &mdash; Trend, Divisions &amp; Districts ({idx} of {total_n})",
+    return masthead("Deep Analysis", f"{label}: Trend, Divisions &amp; Districts ({idx} of {total_n})",
                      reporting_day, data_period, header_note) + f"""
   <div class="stat-grid n3">
     <div class="stat-card c-{color}">
@@ -194,7 +194,7 @@ def _overall_page(start_date, end_date, reporting_day, data_period, header_note)
             for i, r in enumerate(items)
         )
 
-    return masthead("Deep Analysis", "Overall Min &amp; Max &mdash; All Crime Combined",
+    return masthead("Deep Analysis", "Overall Min &amp; Max: All Crime Combined",
                      reporting_day, data_period, header_note) + f"""
   <div class="stat-grid">
     <div class="stat-card c-teal">
@@ -203,12 +203,12 @@ def _overall_page(start_date, end_date, reporting_day, data_period, header_note)
       <div class="d">All crime districts. Excludes Road Accidents and Religious Issues.</div>
     </div>
     <div class="stat-card c-crimson">
-      <div class="n tnum">{worst10[0]["name_en"]} &mdash; {worst10[0]["total"]}</div>
+      <div class="n tnum">{worst10[0]["name_en"]} ({worst10[0]["total"]})</div>
       <div class="l">Highest Overall Total</div>
       <div class="d">{worst10[0]["total"]/grand_total*100:.1f}% of every crime case this period.</div>
     </div>
     <div class="stat-card c-teal">
-      <div class="n tnum">{best10[0]["name_en"]} &mdash; {best10[0]["total"]}</div>
+      <div class="n tnum">{best10[0]["name_en"]} ({best10[0]["total"]})</div>
       <div class="l">Lowest Overall Total</div>
       <div class="d">The safest district in the province across all crime types.</div>
     </div>
@@ -216,7 +216,7 @@ def _overall_page(start_date, end_date, reporting_day, data_period, header_note)
 
   <div class="two-col">
     <div>
-      <span class="sec-tag teal">10 Safest Districts &mdash; Overall</span>
+      <span class="sec-tag teal">10 Safest Districts, Overall</span>
       <div class="table-wrap">
         <table>
           <thead class="teal"><tr><th>#</th><th>District</th><th class="num">Total</th><th class="num">Share</th></tr></thead>
@@ -225,7 +225,7 @@ def _overall_page(start_date, end_date, reporting_day, data_period, header_note)
       </div>
     </div>
     <div>
-      <span class="sec-tag crimson">10 Highest Districts &mdash; Overall</span>
+      <span class="sec-tag crimson">10 Highest Districts, Overall</span>
       <div class="table-wrap">
         <table>
           <thead class="crimson"><tr><th>#</th><th>District</th><th class="num">Total</th><th class="num">Share</th></tr></thead>

@@ -86,7 +86,7 @@ def generate(start_date, end_date, reporting_day, header_note=None, output="pdf"
         )
     multiple = round(worst5[0]["total"] / best5[0]["total"]) if best5[0]["total"] else 0
 
-    page1 = masthead("Deep Analysis", "Performance Ranking &mdash; Crime Districts Only",
+    page1 = masthead("Deep Analysis", "Performance Ranking: Crime Districts Only",
                       reporting_day, data_period, header_note) + f"""
   <div class="stat-grid">
     <div class="stat-card c-navy">
@@ -95,12 +95,12 @@ def generate(start_date, end_date, reporting_day, header_note=None, output="pdf"
       <div class="d">Real crime only, all crime districts. Road Accidents and Religious Issues excluded.</div>
     </div>
     <div class="stat-card c-crimson">
-      <div class="n tnum">{worst5[0]["name_en"]} &mdash; {worst5[0]["total"]}</div>
+      <div class="n tnum">{worst5[0]["name_en"]} ({worst5[0]["total"]})</div>
       <div class="l">Most Cases, Single District</div>
       <div class="d">{worst5[0]["total"]/grand_total*100:.1f}% of the whole province this period.</div>
     </div>
     <div class="stat-card c-teal">
-      <div class="n tnum">{best5[0]["name_en"]} &mdash; {best5[0]["total"]}</div>
+      <div class="n tnum">{best5[0]["name_en"]} ({best5[0]["total"]})</div>
       <div class="l">Fewest Cases, Single District</div>
       <div class="d">The lowest total of any district this period.</div>
     </div>
@@ -111,7 +111,7 @@ def generate(start_date, end_date, reporting_day, header_note=None, output="pdf"
     </div>
   </div>
 
-  <span class="sec-tag teal">Best Performing Districts &mdash; Fewest Cases Reported</span>
+  <span class="sec-tag teal">Best Performing Districts, Fewest Cases Reported</span>
   <div class="table-wrap" style="margin-bottom:6mm">
     <table>
       <thead class="teal"><tr><th>#</th><th>District</th><th class="num">Total Cases</th><th class="num">Share Of Province</th></tr></thead>
@@ -129,8 +129,8 @@ def generate(start_date, end_date, reporting_day, header_note=None, output="pdf"
 
   <div class="callout">
     <b>The Simple Comparison</b>
-    <p style="margin-top:5px">{worst5[0]["name_en"]} recorded {worst5[0]["total"]} cases this period, {best5[0]["name_en"]} recorded {best5[0]["total"]}
-    &mdash; a {multiple}x difference over the exact same dates.</p>
+    <p style="margin-top:5px">{worst5[0]["name_en"]} recorded {worst5[0]["total"]} cases this period, {best5[0]["name_en"]} recorded {best5[0]["total"]},
+    a {multiple}x difference over the exact same dates.</p>
   </div>
 """ + FOOTER
 
@@ -150,7 +150,7 @@ def generate(start_date, end_date, reporting_day, header_note=None, output="pdf"
             f'<td class="num tnum">{r["other"]/t*100:.1f}%</td>'
             f'<td class="num tnum"><b>{r["total"]}</b></td></tr>'
         )
-    page2 = masthead("Deep Analysis", "Each District's Own Crime Mix &mdash; Adds Up To 100%",
+    page2 = masthead("Deep Analysis", "Each District's Own Crime Mix: Adds Up To 100%",
                       reporting_day, data_period, header_note) + f"""
   <p class="sec-note" style="font-size:10.8px;margin-bottom:4mm">This table breaks each district's own total crime into categories, so every row adds up to <b>100%</b>. <b>Other</b> covers the smaller real-crime categories (Dacoity, Dacoity/Robbery variants, Sodomy, Acid Attack). Road Accident Casualties and Religious Issues are not crime and are left out entirely. Ranked by total case count, highest first.</p>
   <div class="table-wrap">
@@ -194,7 +194,7 @@ def generate(start_date, end_date, reporting_day, header_note=None, output="pdf"
     </table>
   </div>
 
-  <span class="sec-tag teal">Safest &amp; Most Affected District &mdash; By Crime Type</span>
+  <span class="sec-tag teal">Safest &amp; Most Affected District, By Crime Type</span>
   <div class="table-wrap" style="margin-bottom:4mm">
     <table>
       <thead class="teal"><tr><th>Crime Type</th><th>Safest District</th><th class="num">Cases</th><th>Most Affected District</th><th class="num">Cases</th></tr></thead>

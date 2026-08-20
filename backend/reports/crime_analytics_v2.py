@@ -79,63 +79,14 @@ _ICON_SHIELD = (
     '</svg>'
 )
 
-# Cover page bottom illustration: a simplified building-entrance line sketch
-# (matches the design brief's watermark-style architectural art) plus the
-# navy/gold diagonal bar along the very bottom edge, as one full-bleed SVG.
-def _tree(cx, base_y, scale=1.0):
-    """One small tree: overlapping-circle canopy over a trunk, in a planter."""
-    s = scale
-    return f"""
-    <g stroke="#D6D3C8" stroke-width="1.1" fill="none">
-      <circle cx="{cx-7*s:.0f}" cy="{base_y-30*s:.0f}" r="{11*s:.1f}"/>
-      <circle cx="{cx+7*s:.0f}" cy="{base_y-30*s:.0f}" r="{11*s:.1f}"/>
-      <circle cx="{cx:.0f}" cy="{base_y-38*s:.0f}" r="{12*s:.1f}"/>
-      <line x1="{cx:.0f}" y1="{base_y-20*s:.0f}" x2="{cx:.0f}" y2="{base_y:.0f}"/>
-      <path d="M{cx-16*s:.0f} {base_y:.0f} L{cx+16*s:.0f} {base_y:.0f} L{cx+12*s:.0f} {base_y+14*s:.0f} L{cx-12*s:.0f} {base_y+14*s:.0f} Z"/>
-    </g>"""
-
-
-_COVER_BUILDING_SVG = f"""
-<svg viewBox="0 0 900 320" width="100%" height="350" preserveAspectRatio="xMidYMax slice" style="display:block">
-  <g stroke="#D8D5CC" stroke-width="1.5" fill="#fff">
-    <rect x="150" y="46" width="190" height="194" />
-    <rect x="340" y="96" width="410" height="144" />
-    <line x1="150" y1="46" x2="340" y2="46" stroke-width="1.8"/>
-    <line x1="340" y1="96" x2="750" y2="96" stroke-width="1.8"/>
-  </g>
-  <g stroke="#E7E4DA" stroke-width="0.9">
-    <line x1="178" y1="46" x2="178" y2="240"/><line x1="206" y1="46" x2="206" y2="240"/>
-    <line x1="234" y1="46" x2="234" y2="240"/><line x1="262" y1="46" x2="262" y2="240"/>
-    <line x1="290" y1="46" x2="290" y2="240"/><line x1="318" y1="46" x2="318" y2="240"/>
-    <line x1="150" y1="82" x2="340" y2="82"/><line x1="150" y1="118" x2="340" y2="118"/>
-    <line x1="150" y1="154" x2="340" y2="154"/><line x1="150" y1="190" x2="340" y2="190"/>
-    <line x1="372" y1="96" x2="372" y2="240"/><line x1="404" y1="96" x2="404" y2="240"/>
-    <line x1="436" y1="96" x2="436" y2="240"/><line x1="468" y1="96" x2="468" y2="240"/>
-    <line x1="500" y1="96" x2="500" y2="240"/><line x1="532" y1="96" x2="532" y2="240"/>
-    <line x1="564" y1="96" x2="564" y2="240"/><line x1="596" y1="96" x2="596" y2="240"/>
-    <line x1="628" y1="96" x2="628" y2="240"/><line x1="660" y1="96" x2="660" y2="240"/>
-    <line x1="692" y1="96" x2="692" y2="240"/><line x1="724" y1="96" x2="724" y2="240"/>
-    <line x1="340" y1="130" x2="750" y2="130"/><line x1="340" y1="164" x2="750" y2="164"/>
-    <line x1="340" y1="198" x2="750" y2="198"/>
-  </g>
-  <text x="172" y="68" font-family="Arial,Helvetica,sans-serif" font-size="21" font-weight="800" fill="#C9C6BA" letter-spacing="1">CSU</text>
-  <text x="172" y="83" font-family="Arial,Helvetica,sans-serif" font-size="6.6" fill="#D2CFC3">CHIEF MINISTER'S CRIME</text>
-  <text x="172" y="93" font-family="Arial,Helvetica,sans-serif" font-size="6.6" fill="#D2CFC3">SURVEILLANCE UNIT</text>
-  <g stroke="#CFCCC0" stroke-width="1.6" fill="#fff">
-    <path d="M197 240 L197 186 L293 186 L293 240" />
-    <line x1="184" y1="186" x2="184" y2="240" stroke-width="1.3"/>
-    <line x1="306" y1="186" x2="306" y2="240" stroke-width="1.3"/>
-    <path d="M180 186 L310 186 L318 178 L172 178 Z" fill="#F2F0E9"/>
-  </g>
-  <g stroke="#DBD8CD" stroke-width="1">
-    <line x1="245" y1="186" x2="245" y2="240"/>
-    <line x1="221" y1="192" x2="221" y2="240"/><line x1="269" y1="192" x2="269" y2="240"/>
-  </g>
-  <line x1="40" y1="240" x2="860" y2="240" stroke="#D8D5CC" stroke-width="1.7"/>
-  {_tree(95, 240, 1.15)}{_tree(130, 240, 0.85)}
-  {_tree(795, 240, 1.05)}{_tree(830, 240, 0.8)}{_tree(400, 240, 0.7)}
-  <polygon points="0,286 900,258 900,320 0,320" fill="#162D45"/>
-  <polygon points="660,320 900,270 900,320" fill="#C8A45C"/>
+# Cover page bottom accent: a plain navy/gold diagonal bar spanning the full
+# page width. Used alone (no building illustration -- dropped per feedback
+# that the line-art building didn't read well) on both the front and back
+# cover, so the two pages bookend each other with the same quiet motif.
+_COVER_BOTTOM_BAR_SVG = """
+<svg viewBox="0 0 900 60" width="100%" height="60" preserveAspectRatio="none" style="display:block">
+  <polygon points="0,26 900,4 900,60 0,60" fill="#162D45"/>
+  <polygon points="660,60 900,14 900,60" fill="#C8A45C"/>
 </svg>
 """
 
@@ -221,7 +172,7 @@ body{{font-family:-apple-system,'Segoe UI',system-ui,sans-serif;color:#1e293b;li
 .page.cover{{padding:0}}
 .cover{{width:210mm;height:297mm;background:#fff;color:var(--dk);display:flex;flex-direction:column;position:relative;overflow:hidden}}
 .cover-dots{{position:absolute;top:0;right:0;width:260px;height:260px;background-image:radial-gradient(circle, var(--accent) 1.7px, transparent 1.7px);background-size:12px 12px;-webkit-mask-image:linear-gradient(225deg, #000 30%, transparent 78%);mask-image:linear-gradient(225deg, #000 30%, transparent 78%);opacity:.6}}
-.cover-main{{flex:1;display:flex;flex-direction:column;align-items:center;text-align:center;justify-content:center;padding:0 20mm 40mm 32mm;position:relative;z-index:1}}
+.cover-main{{flex:1;display:flex;flex-direction:column;align-items:center;text-align:center;justify-content:center;padding:60mm 20mm 10mm 32mm;position:relative;z-index:1}}
 .cover-label{{font-size:10.5px;letter-spacing:2.6px;text-transform:uppercase;color:var(--accent);margin:20px 0 22px;font-weight:700}}
 .cover h1{{font-family:'Playfair Display',Georgia,serif;font-size:44px;font-weight:800;line-height:1.15;color:var(--dk);margin-bottom:18px}}
 .cover-line{{width:76px;height:3px;background:var(--accent);margin:0 0 22px}}
@@ -364,7 +315,7 @@ def _cover_page(data_period, reporting_day, n_days):
 <div class="cover-label">Chief Minister's Crime Surveillance Unit &middot; Government of Punjab</div>
 <h1>Crime Analytics Punjab</h1>
 <div class="cover-line"></div>
-<p class="subtitle">Comparative Analysis of Provincial Crime Data &mdash; a comprehensive view of crime trends, district-level patterns, and emerging concerns of Punjab for Executive oversight.</p>
+<p class="subtitle">Comparative Analysis of Provincial Crime Data: a comprehensive view of crime trends, district-level patterns, and emerging concerns of Punjab for Executive oversight.</p>
 <div class="cover-meta">
 <div class="item"><div class="icon-badge">{_ICON_CALENDAR}</div><span><strong>{esc(data_period)}</strong>Reporting Period ({n_days} days)</span></div>
 <div class="div"></div>
@@ -373,9 +324,39 @@ def _cover_page(data_period, reporting_day, n_days):
 <div class="item"><div class="icon-badge">{_ICON_SHIELD}</div><span><strong>Official &middot; Restricted</strong>Classification</span></div>
 </div>
 </div>
-<div class="cover-illustration">{_COVER_BUILDING_SVG}</div>
+<div class="cover-illustration">{_COVER_BOTTOM_BAR_SVG}</div>
 </section>
 """
+
+
+def _back_cover_page():
+    """Closing bookend to the front cover -- same quiet visual language
+    (dot pattern, navy/gold bottom bar), no page content repeated, just the
+    issuing body and data-source attribution."""
+    return f"""
+<section class="page cover">
+<div class="cover-dots"></div>
+<div class="cover-main">
+<div style="display:flex;align-items:center;gap:18px;margin-bottom:22px">
+<img src="{GOVT_LOGO}" style="height:66px;width:auto">
+<div style="width:1px;height:48px;background:var(--line)"></div>
+<img src="{CSU_LOGO}" style="height:48px;width:auto;object-fit:contain">
+</div>
+<div class="cover-label">Chief Minister's Crime Surveillance Unit</div>
+<h1 style="font-size:26px">Government of Punjab</h1>
+<div class="cover-line"></div>
+<p class="subtitle" style="font-size:12px;max-width:400px">Prepared by the Chief Minister's Crime Surveillance Unit (CSU) for the Chief Minister's Office, Government of Punjab.</p>
+</div>
+<div class="cover-illustration">{_COVER_BOTTOM_BAR_SVG}</div>
+</section>
+"""
+
+
+def _blank_page():
+    """A deliberately empty page -- standard print-production practice
+    around a cover (front and back), so the printer/binder has a clean
+    separation before content starts and before the closing cover."""
+    return '<section class="page"></section>'
 
 
 # ═══════════════════════════════════════════════════════════════════════
@@ -405,7 +386,7 @@ def _key_insights_page(start_date, end_date, weekly_context, page_num):
     summary = ""
     if closing:
         _, tag, text = closing
-        summary = f'<div class="summary-box"><strong>{esc(tag)} &mdash;</strong> {_highlight_keywords(text)}{method_box(tag, on_dark=True)}</div>'
+        summary = f'<div class="summary-box"><strong>{esc(tag)}:</strong> {_highlight_keywords(text)}{method_box(tag, on_dark=True)}</div>'
 
     content = f"""
 <div class="sec-title"><h2>Key Insights</h2><span>Section 01</span></div>
@@ -519,15 +500,15 @@ def _rising_falling_page(start_date, end_date, page_num):
     content = f"""
 <div class="sec-title"><h2>Crime Trend Overview</h2><span>Section 02 (cont.)</span></div>
 <div class="tbl-block">
-<div class="tbl-h">Is Crime Rising or Falling &mdash; Daily Average</div>
+<div class="tbl-h">Is Crime Rising or Falling: Daily Average</div>
 <div class="tbl-d">Average cases per day, every recorded category combined, vs the previous complete week.{note}</div>
-<div class="chart-wrap">{chart_svg}<div class="chart-legend"><span class="dot" style="background:#c8a45c"></span>Daily average, all categories combined &mdash; gold marker = week value, label = weeks from data start (Week 1 onward)</div></div>
+<div class="chart-wrap">{chart_svg}<div class="chart-legend"><span class="dot" style="background:#c8a45c"></span>Daily average, all categories combined. Gold marker = week value; label = weeks from data start (Week 1 onward)</div></div>
 <table style="font-size:8.7px">
 <thead><tr><th>Week</th><th>Dates</th><th class="num">Total</th><th class="num">Avg/Day</th><th class="num">Change</th></tr></thead>
 <tbody>{week_rows}</tbody>
 </table>
 </div>
-<div class="summary-box"><strong>Overall Direction &mdash;</strong> The most recent complete week on file ({latest_label}) averaged {latest_avg} cases per day, against a typical week of {typical_avg}. The province is <strong>{direction} ({overall_pct:+.0f}% vs typical)</strong>.</div>
+<div class="summary-box"><strong>Overall Direction:</strong> The most recent complete week on file ({latest_label}) averaged {latest_avg} cases per day, against a typical week of {typical_avg}. The province is <strong>{direction} ({overall_pct:+.0f}% vs typical)</strong>.</div>
 """
     return _wrap(content, page_num)
 
@@ -628,7 +609,7 @@ def _detail_pages(start_date, end_date, first_page_num):
     ]
 
     note = (
-        '<div style="margin-top:16px" class="summary-box"><strong>Note &mdash;</strong> '
+        '<div style="margin-top:16px" class="summary-box"><strong>Note:</strong> '
         "Dacoity/Robbery with Rape is not shown as its own card (0&ndash;1 cases per week throughout the period); "
         "it is reported in the Week-by-Week Case Count table only.</div>"
     )
@@ -711,7 +692,7 @@ def _composition_page(start_date, end_date, page_num):
 <div class="sec-title"><h2>Each District's Crime Mix &amp; Contribution to Punjab</h2><span>Section 04</span></div>
 <p class="sec-desc">The first seven columns break each district's own total into categories (adding to 100% per row). "Other" covers remaining categories, including Road Accident Casualties and Religious Issues. The last column is each district's share of every case reported in Punjab. Highlighted cells mark the district where Murder, Rape, Gang Rape or Child Abuse makes up the largest share of that district's own caseload.</p>
 <table class="district-tbl">
-<thead><tr><th style="width:4%">#</th><th style="width:16%">District</th><th class="num">Murder</th><th class="num">Robbery</th><th class="num">Child Ab.</th><th class="num">Rape</th><th class="num">Gang Rape</th><th class="num">Snatch.</th><th class="num">Other</th><th class="num">Total</th><th class="num">% Punjab</th></tr></thead>
+<thead><tr><th style="width:4%">#</th><th style="width:16%">District</th><th class="num">Murder</th><th class="num">Robbery</th><th class="num">Child Ab.</th><th class="num">Rape</th><th class="num">Gang Rape</th><th class="num">Snatch.</th><th class="num">Other</th><th class="num">Total</th><th class="num">% of Punjab</th></tr></thead>
 <tbody>{trs}</tbody>
 </table>
 """
@@ -731,7 +712,9 @@ def generate(start_date=None, end_date=None, reporting_day=None, header_note=Non
 
     weekly_context = _weekly_context(start_date, end_date)
 
-    page_num = 2
+    # Page 1 = front cover, page 2 = blank (print-production spacer), so
+    # numbered content starts at page 3.
+    page_num = 3
     p_insights = _key_insights_page(start_date, end_date, weekly_context, page_num)
     page_num += 1
     p_case_count = _weekly_case_count_page(start_date, end_date, page_num)
@@ -741,11 +724,17 @@ def generate(start_date=None, end_date=None, reporting_day=None, header_note=Non
     p_detail, n_detail_pages = _detail_pages(start_date, end_date, page_num)
     page_num += n_detail_pages
     p_composition = _composition_page(start_date, end_date, page_num)
+    page_num += 2  # blank spacer before the back cover, then the back cover itself
 
     total_pages = page_num
     p_cover = _cover_page(data_period, reporting_day, n_days)
+    p_blank = _blank_page()
+    p_back_cover = _back_cover_page()
 
-    all_html = p_cover + p_insights + p_case_count + p_rising_falling + p_detail + p_composition
+    all_html = (
+        p_cover + p_blank + p_insights + p_case_count + p_rising_falling
+        + p_detail + p_composition + p_blank + p_back_cover
+    )
     all_html = all_html.replace("__TOTAL__", str(total_pages))
 
     html = f"""<!doctype html>

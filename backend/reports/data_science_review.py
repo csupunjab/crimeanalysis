@@ -272,10 +272,10 @@ def _purpose_section():
     the more dangerous place to live.</p>
     <p class="body-text">This report adds the layer that has been missing: every headline crime category expressed as
     a rate <b>per 100,000 residents</b>, using official 2023 census population. It also adds three things no other
-    report in this system currently does — statistical outlier detection (which districts are genuine anomalies, not
+    report in this system currently does: statistical outlier detection (which districts are genuine anomalies, not
     just "highest"), an international benchmark for Murder against Pakistan's and the world's official homicide
     rate, and a single composite list of the districts and crime types that most need careful, individual review.</p>
-    <p class="body-text">This is a content-first draft. Tables, figures and structure only — visual design is intentionally
+    <p class="body-text">This is a content-first draft. Tables, figures and structure only; visual design is intentionally
     left for a later pass.</p>
   </div>
 """
@@ -290,7 +290,7 @@ def _methodology_section(data_period, n_days):
       <li><b>Crime counts.</b> The crime_daily table, sourced from Punjab Police daily returns via the CSU control
       room. Data period for this report: <b>{esc(data_period)}</b>.</li>
       <li><b>District population.</b> Pakistan Bureau of Statistics, 7th Population &amp; Housing Census 2023,
-      Provincial Census Report&nbsp;&mdash; Punjab, official district/tehsil population table (2023 and 2017 figures),
+      Provincial Census Report, Punjab, official district/tehsil population table (2023 and 2017 figures),
       retrieved 19&nbsp;Aug&nbsp;2026 from pbs.gov.pk. Five CSU reporting units (Wazirabad, Kot&nbsp;Addu, Murree,
       Talagang, Tonsa) are census tehsils, not top-level census districts; their population is taken from the
       tehsil-level rows of the same table and subtracted from their parent district so no resident is
@@ -299,7 +299,7 @@ def _methodology_section(data_period, n_days):
       <li><b>International homicide benchmark.</b> World Bank Open Data, indicator VC.IHR.PSRC.P5
       ("Intentional homicides, per 100,000 people"), built from UNODC Global Study on Homicide research data,
       2023 figures. Homicide is the only category compared internationally in this report, because it is the only
-      one with a sufficiently consistent legal definition and reporting standard across countries &mdash; comparing
+      one with a sufficiently consistent legal definition and reporting standard across countries. Comparing
       categories like Robbery or Snatching across national legal systems would not be a fair or meaningful
       comparison, so this report does not attempt it.</li>
       <li><b>Rates.</b> Crime rate per 100,000 = (case count &divide; population) &times; 100,000, for the data
@@ -308,11 +308,11 @@ def _methodology_section(data_period, n_days):
       shown.</li>
       <li><b>Outlier detection.</b> For each headline category, a district is flagged as a statistical outlier if
       its per-100,000 rate exceeds the province-wide mean rate for that category by more than two standard
-      deviations (a standard, conservative threshold — roughly the top 2&ndash;3% of a normal distribution).</li>
+      deviations (a standard, conservative threshold, roughly the top 2&ndash;3% of a normal distribution).</li>
       <li><b>What this report does not claim.</b> Reported crime is not the same as actual crime incidence, and
       differences in policing intensity, public willingness to report, or record-keeping practice between districts
       can affect counts independently of true risk. Census population is a mid-2023 snapshot; current populations
-      will have grown since, at each district's own historical rate (shown in Appendix&nbsp;A) — this report does not
+      will have grown since, at each district's own historical rate (shown in Appendix&nbsp;A); this report does not
       project forward. No figure in this report has been estimated or interpolated; where an official comparison
       figure was not available, the comparison is simply not made.</li>
     </ul>
@@ -341,7 +341,7 @@ def _per_capita_section(district_rows, n_days):
     )
     return f"""
   <div class="flow-section">
-    <div class="section-heading"><span class="num-badge">3</span><h2>Population-Adjusted Crime Rates — All Real Crime</h2></div>
+    <div class="section-heading"><span class="num-badge">3</span><h2>Population-Adjusted Crime Rates: All Real Crime</h2></div>
     <div class="desk-tag">Population &amp; Demographics Desk</div>
     <div class="section-sub">{esc(REAL_CRIME_LABEL)}, all districts, ranked by rate per 100,000 residents (highest first). Rate uses official 2023 census population.</div>
     <div class="table-wrap keep">
@@ -349,7 +349,7 @@ def _per_capita_section(district_rows, n_days):
         <thead class="navy"><tr><th>Raw Rank</th><th>District</th><th class="num">Population (2023)</th><th class="num">Case Count</th><th class="num">Rate / 100,000</th><th class="num">Rate Rank</th></tr></thead>
         <tbody>{trs}</tbody>
       </table>
-      <div class="tbl-note">Raw Rank is the district's position by case count alone (1 = most cases) — the number every other report in this system shows. Rate Rank is its position once population is accounted for. Where Rate Rank is a much lower number than Raw Rank, the district is more dangerous per resident than its case count alone suggests; see Section 4.</div>
+      <div class="tbl-note">Raw Rank is the district's position by case count alone (1 = most cases), the number every other report in this system shows. Rate Rank is its position once population is accounted for. Where Rate Rank is a much lower number than Raw Rank, the district is more dangerous per resident than its case count alone suggests; see Section 4.</div>
     </div>
   </div>
 """
@@ -380,7 +380,7 @@ def _hidden_risk_section(district_rows):
   <div class="flow-section">
     <div class="section-heading"><span class="num-badge">4</span><h2>Hidden-Risk Districts</h2></div>
     <div class="desk-tag">District Risk Profiling Desk</div>
-    <div class="section-sub">Districts whose per-capita rank is far worse than their raw-count rank — the ones invisible to every raw-count report this office produces.</div>
+    <div class="section-sub">Districts whose per-capita rank is far worse than their raw-count rank: the ones invisible to every raw-count report this office produces.</div>
     {body}
   </div>
 """
@@ -416,7 +416,7 @@ def _outlier_section(start_date, end_date):
             blocks.append(f"""
     <div class="table-wrap keep" style="margin-bottom:4mm">
       <table class="tight">
-        <thead class="violet"><tr><th colspan="5">{esc(label)} — statistical outliers (rate &gt; mean + 2&sigma;, province mean {mean:.1f}/100k)</th></tr></thead>
+        <thead class="violet"><tr><th colspan="5">{esc(label)}: statistical outliers (rate &gt; mean + 2&sigma;, province mean {mean:.1f}/100k)</th></tr></thead>
         <thead class="navy"><tr><th>District</th><th class="num">Cases</th><th class="num">Rate / 100,000</th><th class="num">Province Mean</th><th class="num">Deviation</th></tr></thead>
         <tbody>{rows_html}</tbody>
       </table>
@@ -467,7 +467,7 @@ def _benchmark_section(district_rows, n_days):
 
     return f"""
   <div class="flow-section">
-    <div class="section-heading"><span class="num-badge">6</span><h2>International Benchmarking — Murder Only</h2></div>
+    <div class="section-heading"><span class="num-badge">6</span><h2>International Benchmarking: Murder Only</h2></div>
     <div class="desk-tag">Comparative &amp; International Benchmarking Desk</div>
     <div class="section-sub">Murder rate per 100,000 population, annualised for fair comparison against annual international figures. See Section 2 for why only Murder is benchmarked internationally.</div>
     <div class="keep" style="margin:3mm 0 4mm">{bench_html}</div>
@@ -501,11 +501,11 @@ def _density_section(district_rows):
     direction = ""
     if corr is not None:
         if corr > 0.3:
-            direction = "a meaningful positive relationship — denser districts tend to show higher per-capita crime rates."
+            direction = "a meaningful positive relationship: denser districts tend to show higher per-capita crime rates."
         elif corr < -0.3:
-            direction = "a meaningful negative relationship — denser districts tend to show lower per-capita crime rates."
+            direction = "a meaningful negative relationship: denser districts tend to show lower per-capita crime rates."
         else:
-            direction = "no meaningful relationship — population density alone does not explain per-capita crime rate variation across Punjab."
+            direction = "no meaningful relationship: population density alone does not explain per-capita crime rate variation across Punjab."
 
     ranked = sorted(zip([p[0] for p in pairs], densities, crime_rates), key=lambda x: -x[1])[:8]
     rows_html = "".join(
@@ -587,7 +587,7 @@ def _priority_section(district_rows, outlier_names):
     return f"""
   <div class="flow-section">
     <div class="section-heading"><span class="num-badge">9</span><h2>Priority Review Matrix</h2></div>
-    <div class="desk-tag">District Risk Profiling Desk — synthesis of Sections 3–6</div>
+    <div class="desk-tag">District Risk Profiling Desk: synthesis of Sections 3&ndash;6</div>
     <div class="section-sub">Composite score combining raw-count ranking, per-capita ranking, hidden-risk status, and statistical outlier flags. This is the single list this office should start from for district-level follow-up.</div>
     <div class="table-wrap keep">
       <table class="tight">
@@ -613,7 +613,7 @@ def _recommendations_section():
       case counts appear modest, since their residents currently face materially higher risk than the raw number
       suggests.</li>
       <li>Where a district's Murder rate individually exceeds the world average (Section 6), a targeted case-file
-      review is warranted before drawing conclusions — a short reporting period can amplify a small number of
+      review is warranted before drawing conclusions: a short reporting period can amplify a small number of
       cases into a large annualised rate, so this is a screening flag, not a finding on its own.</li>
       <li>Revisit district population figures once the next official census or Bureau of Statistics update is
       published; until then, all per-capita figures in this report use the 2023 census as the most recent official
@@ -634,14 +634,14 @@ def _population_appendix():
     )
     return f"""
   <div class="flow-section">
-    <div class="section-heading"><span class="num-badge">A</span><h2>Appendix A — Full Population Reference Table</h2></div>
-    <div class="section-sub">Pakistan Bureau of Statistics, Population &amp; Housing Census 2023, Provincial Census Report — Punjab. All 39 districts covered by this system, plus Talagang and Tonsa for reference (excluded from analysis elsewhere in this system). Annual growth rate is the compound annual rate implied by the 2017-2023 intercensal change.</div>
+    <div class="section-heading"><span class="num-badge">A</span><h2>Appendix A: Full Population Reference Table</h2></div>
+    <div class="section-sub">Pakistan Bureau of Statistics, Population &amp; Housing Census 2023, Provincial Census Report, Punjab. All 39 districts covered by this system, plus Talagang and Tonsa for reference (excluded from analysis elsewhere in this system). Annual growth rate is the compound annual rate implied by the 2017-2023 intercensal change.</div>
     <div class="table-wrap keep">
       <table class="tight">
         <thead class="navy"><tr><th>District</th><th class="num">Population 2023</th><th class="num">Population 2017</th><th class="num">Annual Growth Rate</th><th class="num">Area (km&sup2;)</th></tr></thead>
         <tbody>{rows_html}</tbody>
       </table>
-      <div class="src-note">Source: Pakistan Bureau of Statistics, 7th Population &amp; Housing Census 2023, Provincial Census Report — Punjab. pbs.gov.pk/wp-content/uploads/census_tables/tables/table_1_punjab_districts.pdf — retrieved 19 Aug 2026. Wazirabad, Kot Addu, Murree, Talagang and Tonsa figures are tehsil-level rows from the same table, with their population subtracted from their parent district (Gujranwala, Muzaffargarh, Rawalpindi, Chakwal, Dera Ghazi Khan respectively) to avoid double-counting.</div>
+      <div class="src-note">Source: Pakistan Bureau of Statistics, 7th Population &amp; Housing Census 2023, Provincial Census Report, Punjab. pbs.gov.pk/wp-content/uploads/census_tables/tables/table_1_punjab_districts.pdf, retrieved 19 Aug 2026. Wazirabad, Kot Addu, Murree, Talagang and Tonsa figures are tehsil-level rows from the same table, with their population subtracted from their parent district (Gujranwala, Muzaffargarh, Rawalpindi, Chakwal, Dera Ghazi Khan respectively) to avoid double-counting.</div>
     </div>
   </div>
 """
@@ -696,7 +696,7 @@ def generate(start_date, end_date, reporting_day=None, header_note=None, output=
     header_tpl = f"""
 <div style="width:100%;font-family:Arial,Helvetica,sans-serif;padding:8px 10mm 4px;box-sizing:border-box;-webkit-print-color-adjust:exact;">
   <div style="display:flex;align-items:center;justify-content:space-between;border-bottom:2px solid #211d50;padding-bottom:6px;">
-    <div style="font-size:15px;font-weight:800;color:#211d50;">Comprehensive Crime Data Review — CSU Data Analysis Committee</div>
+    <div style="font-size:15px;font-weight:800;color:#211d50;">Comprehensive Crime Data Review: CSU Data Analysis Committee</div>
   </div>
 </div>
 """

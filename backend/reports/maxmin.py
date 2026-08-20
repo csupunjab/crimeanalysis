@@ -35,7 +35,7 @@ def _block(label, maxrows, minrows, color="crimson"):
         for i, r in enumerate(minrows)
     )
     return f"""
-  <span class="sec-tag {color}" style="margin-bottom:2mm">{label} &mdash; Highest &amp; Lowest 5 Districts</span>
+  <span class="sec-tag {color}" style="margin-bottom:2mm">{label}: Highest &amp; Lowest 5 Districts</span>
   <div class="two-col" style="margin-bottom:5mm">
     <div class="table-wrap">
       <table>
