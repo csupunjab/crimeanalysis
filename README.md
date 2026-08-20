@@ -19,28 +19,77 @@ demand, instead of building them by hand each time. Two pieces:
 
 | Report | Format | What it does |
 |---|---|---|
-| Deep Analysis | PDF | Performance ranking, per-district crime-mix composition (rows sum to 100%), week-by-week trend |
+| Crime Analytics Punjab (Monthly Trend) | PDF | Key Insights, month-over-month weekly trend, per-crime detail, district composition |
+| Crime Analytics Punjab (New Design) | PDF | Same content, dark-navy/gold executive cover design, full data history |
 | Category Deep Dive | PDF | One page per crime type: weekly trend, top divisions, top/bottom 5 districts, closing overall min/max page |
 | Crime Pattern Analysis | PDF | Chronic districts / biggest one-day jumps / rising-fast districts, per crime type |
 | Safest Districts | PDF | Lowest-crime districts per crime type, with a Days-On-File caveat |
-| Max & Min Districts | PDF | Top 5 highest and lowest districts side by side, per crime type |
 | District-Wise Total Crime | CSV | All districts x all 14 recorded categories, grand total row |
+| Comprehensive Crime Data Review | PDF | Population-adjusted rates, outlier detection, international benchmarking (Data Science Committee) |
 
 All figures on every report count **real crime only** — Road Accident
 Casualties and Religious Issues are not crime categories and are excluded
 from every total.
 
+## First-time setup (new developer)
+
+Prerequisites: Python 3.11+, Node 18+, PostgreSQL (local server for dev —
+see below), git.
+
+```
+git clone https://github.com/csupunjab/crimeanalysis.git
+cd crimeanalysis
+
+# Backend
+cd backend
+python -m venv venv
+venv\Scripts\pip install -r requirements.txt
+copy .env.example .env
+cd render
+npm install
+cd ..
+
+# Frontend
+cd ..\frontend
+npm install
+```
+
+### Local database
+
+Production points at the live `csu_control_room` Postgres database, which
+you won't have credentials for as a new developer. Instead, set up a local
+Postgres database with the same 3 tables this app actually queries
+(`districts`, `divisions`, `crime_daily`), loaded with **synthetic** sample
+data (randomly generated — not real crime figures) so every report renders
+correctly against realistic-looking numbers:
+
+```
+createdb -U postgres csu_control_room
+psql -U postgres -d csu_control_room -f db/schema.sql
+psql -U postgres -d csu_control_room -f db/seed.sql
+```
+
+`backend/.env.example` already points at `127.0.0.1` / `postgres` /
+`postgres` / `csu_control_room` to match this. Copy it to `.env` (done
+above) and adjust if your local Postgres user/password differ.
+
+Want more synthetic days of data, or different date range? Edit the
+`START` / `END` constants in `db/generate_synthetic_crime.py` and rerun it
+(it appends to `db/seed.sql`) — the `divisions`/`districts` inserts above it
+in that file are real reference data (district names/codes only, not crime
+data) and don't need regenerating.
+
 ## Running locally
 
-**Backend** (first time: `python -m venv venv` then install requirements —
-already done if you're reading this after initial setup):
+**Backend**:
 
 ```
 cd backend
 venv\Scripts\python.exe app.py
 ```
 
-Runs on `http://localhost:5050`.
+Runs on `http://localhost:8050` (or whatever `FLASK_PORT` is set to in
+`.env`).
 
 **Frontend**:
 
@@ -53,9 +102,11 @@ Runs on `http://localhost:5173` and proxies `/api/*` to the backend.
 
 ## Configuration
 
-`backend/.env` holds the Postgres connection (same production database used
-throughout this project — `103.111.160.131` / `csu_control_room`) and the
-Flask port. Generated PDFs/CSVs land in `backend/generated/` (gitignored).
+`backend/.env` (gitignored — copy from `.env.example`) holds the Postgres
+connection and the Flask port. In production this points at the live
+`103.111.160.131` / `csu_control_room` database; locally it points at your
+own Postgres instance seeded per above. Generated PDFs/CSVs land in
+`backend/generated/` (gitignored).
 
 ## Adding a new report type
 
