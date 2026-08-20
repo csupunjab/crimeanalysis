@@ -689,7 +689,7 @@ def _composition_page(start_date, end_date, page_num):
         )
 
     content = f"""
-<div class="sec-title"><h2>Each District's Crime Mix &amp; Contribution to Punjab</h2><span>Section 04</span></div>
+<div class="sec-title"><h2>Each District's Crime Mix And Contribution To Punjab</h2><span>Section 04</span></div>
 <p class="sec-desc">The first seven columns break each district's own total into categories (adding to 100% per row). "Other" covers remaining categories, including Road Accident Casualties and Religious Issues. The last column is each district's share of every case reported in Punjab. Highlighted cells mark the district where Murder, Rape, Gang Rape or Child Abuse makes up the largest share of that district's own caseload.</p>
 <table class="district-tbl">
 <thead><tr><th style="width:4%">#</th><th style="width:16%">District</th><th class="num">Murder</th><th class="num">Robbery</th><th class="num">Child Ab.</th><th class="num">Rape</th><th class="num">Gang Rape</th><th class="num">Snatch.</th><th class="num">Other</th><th class="num">Total</th><th class="num">% of Punjab</th></tr></thead>
