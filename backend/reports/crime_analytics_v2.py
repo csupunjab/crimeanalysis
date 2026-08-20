@@ -493,8 +493,9 @@ def _back_cover_page():
 <div style="width:1px;height:48px;background:var(--line)"></div>
 <img src="{CSU_LOGO}" style="height:48px;width:auto;object-fit:contain">
 </div>
-<div class="cover-label">Chief Minister's Crime Surveillance Unit</div>
-<h1 style="font-size:26px">Government of Punjab</h1>
+<div class="cover-label" style="font-size:16px;font-weight:bold;letter-spacing:0px">Chief Minister's</div>
+<div class="cover-label" style="font-size:26px;font-weight:bold;letter-spacing:0px">Crime Surveillance Unit</div>
+<h1 style="font-size:26px;margin-top:14px">Government of Punjab</h1>
 <div class="cover-line"></div>
 <p class="subtitle" style="font-size:12px;max-width:400px">Prepared by the Chief Minister's Crime Surveillance Unit (CSU) for the Chief Minister's Office, Government of Punjab.</p>
 </div>
