@@ -153,7 +153,7 @@ INSIGHT_METHODOLOGY = {
 # ═══════════════════════════════════════════════════════════════════════
 CSS = f"""
 @font-face{{font-family:'Playfair Display';font-weight:600 800;font-style:normal;font-display:swap;src:url({PLAYFAIR_FONT}) format('woff2')}}
-:root{{--dk:#0c1b2a;--dk2:#162d45;--accent:#c8a45c;--accent2:#d4b76a;--red:#c0392b;--green:#27854a;--gray:#64748b;--line:#e2e0db}}
+:root{{--dk:#0c1b2a;--dk2:#162d45;--accent:#c8a45c;--accent2:#d4b76a;--red:#c0392b;--green:#27854a;--orange:#d9720a;--gray:#64748b;--line:#e2e0db}}
 *{{margin:0;padding:0;box-sizing:border-box}}
 body{{font-family:-apple-system,'Segoe UI',system-ui,sans-serif;color:#1e293b;line-height:1.5;background:#fff}}
 @page{{size:A4;margin:0}}
@@ -228,9 +228,19 @@ tr:nth-child(even){{background:#faf9f7}}
 .badge-flat{{background:rgba(100,116,139,.1);color:var(--gray)}}
 .crime-body{{padding:11px 14px 13px}}
 .cat-chart{{margin-bottom:9px}}
-.crime-districts{{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;font-size:10px;margin-bottom:9px}}
+.crime-districts{{display:grid;grid-template-columns:1fr 1fr 1fr;gap:0;font-size:10px;margin-bottom:9px}}
+.dist-col{{padding:0 12px}}
+.dist-col:first-child{{padding-left:0}}
+.dist-col:last-child{{padding-right:0}}
+.dist-col+.dist-col{{border-left:1px solid var(--line)}}
 .dist-col h4{{font-size:8.3px;text-transform:uppercase;letter-spacing:.6px;color:var(--gray);margin-bottom:4px;font-weight:600}}
+.dist-col.most h4{{color:var(--orange)}}
+.dist-col.chronic h4{{color:var(--red)}}
+.dist-col.fewest h4{{color:var(--green)}}
 .dist-row{{display:flex;justify-content:space-between;padding:1.5px 0}}
+.dist-col.most .dist-row strong{{color:var(--orange)}}
+.dist-col.chronic .dist-row strong{{color:var(--red)}}
+.dist-col.fewest .dist-row strong{{color:var(--green)}}
 .rising{{font-size:9.8px;color:#475569;line-height:1.5}}
 .rising b{{color:var(--dk)}}
 .district-tbl th{{font-size:7px;padding:3px 2px}}
@@ -588,9 +598,9 @@ def _crime_card(col, label, start_date, end_date, weeks, per_category, complete_
 <div class="crime-card"><div class="crime-head"><h3 {heading_color}>{esc(label)}</h3><span class="badge {badge_css}">{trend_label}</span></div><div class="crime-body">
 {chart_html}
 <div class="crime-districts">
-<div class="dist-col"><h4>Most Cases</h4>{col3(maxrows, "v")}</div>
-<div class="dist-col"><h4>Chronic</h4>{col3(chronicrows, "days_with_cases")}</div>
-<div class="dist-col"><h4>Fewest</h4>{col3(minrows, "v")}</div>
+<div class="dist-col most"><h4>Most Cases</h4>{col3(maxrows, "v")}</div>
+<div class="dist-col chronic"><h4>Chronic</h4>{col3(chronicrows, "days_with_cases")}</div>
+<div class="dist-col fewest"><h4>Fewest</h4>{col3(minrows, "v")}</div>
 </div>
 <div class="rising"><b>Rising:</b> {rising_text}</div>
 </div></div>
