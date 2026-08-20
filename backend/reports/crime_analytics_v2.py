@@ -207,14 +207,17 @@ thead{{background:var(--dk);color:#fff}}
 th{{padding:4px 3px;font-weight:600;text-align:left;font-size:8px;letter-spacing:.3px;text-transform:uppercase;line-height:1.2}}
 td{{padding:4px 3px;border-bottom:1px solid #eee;vertical-align:top}}
 tr:nth-child(even){{background:#faf9f7}}
-.wk-count-tbl{{font-size:7.6px;table-layout:fixed}}
-.wk-count-tbl th{{padding:6px 2px;font-size:6.8px;white-space:normal;line-height:1.25}}
+.wk-count-tbl{{font-size:7.8px;table-layout:fixed}}
+.wk-count-tbl th{{padding:6px 2px;font-size:7px;white-space:normal;line-height:1.25}}
 .wk-count-tbl td{{padding:6.5px 2px}}
-.wk-count-tbl .wk-label{{font-weight:600;text-align:left;white-space:normal;line-height:1.22;font-size:7.6px;padding-right:4px}}
+.wk-count-tbl .wk-label{{font-weight:600;text-align:left;white-space:normal;line-height:1.22;font-size:7.8px;padding-right:4px}}
 .num{{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}}
 .tbl-block{{margin-bottom:14px}}
 .tbl-h{{font-size:11.5px;font-weight:700;color:var(--dk);margin-bottom:2px}}
 .tbl-d{{font-size:9px;color:var(--gray);margin-bottom:6px}}
+.rot-page-center{{height:100%;display:flex;align-items:center;justify-content:center;padding-top:14mm}}
+.rot-outer{{width:163mm;height:222mm;position:relative;flex:0 0 auto}}
+.rot-inner{{position:absolute;width:222mm;height:163mm;top:50%;left:50%;transform:translate(-50%,-50%) rotate(90deg)}}
 .chart-wrap{{border:1px solid var(--line);border-radius:6px;padding:8px 10px 4px;margin-bottom:10px}}
 .chart-legend{{display:flex;align-items:center;gap:6px;font-size:8.3px;color:var(--gray);margin-top:2px}}
 .chart-legend .dot{{width:7px;height:7px;border-radius:50%;display:inline-block}}
@@ -411,12 +414,6 @@ def _key_insights_page(start_date, end_date, weekly_context, page_num):
 # categories, calendar-locked weeks) + the weekly rising/falling table,
 # now WITH the line chart the supplied design was missing.
 # ═══════════════════════════════════════════════════════════════════════
-# Tight month codes for the Week-by-Week Case Count header only (matches
-# the supplied design's abbreviation scheme, e.g. "M·W1", "Jn·W2").
-_MONTH_CODE = {
-    "Jan": "Ja", "Feb": "F", "Mar": "Mr", "Apr": "Ap", "May": "M", "Jun": "Jn",
-    "Jul": "Jl", "Aug": "A", "Sep": "S", "Oct": "O", "Nov": "N", "Dec": "D",
-}
 # The simple 5-column rising/falling table is still capped to a trailing
 # window -- it's a fixed one-page section with no doc-page.js
 # auto-pagination, and would eventually overflow as weeks keep
@@ -428,9 +425,26 @@ _MONTH_CODE = {
 MAX_WEEKS_SHOWN = 20
 
 
-def _short_week_label(label):
-    month, wk = label.split(" ")
-    return f'{_MONTH_CODE.get(month, month)}&middot;{wk.replace("Wk", "W")}'
+def _full_week_label(label):
+    """'May Wk1' -> 'May Week 1' -- spelled out in full now that the table
+    is rotated onto its side, which gives it far more usable width than
+    the old squeezed abbreviations needed."""
+    return label.replace("Wk", "Week ")
+
+
+# The page header (CSU/govt logos) and footer (page number) stay upright,
+# same as every other page -- same binding margin throughout the report.
+# Everything else on this page (section heading, table heading/description,
+# and the table itself) rotates together as one block, via .rot-outer/
+# .rot-inner below, so it all reads in the same direction: turn the
+# printed page anti-clockwise to read it -- rotated clockwise (rotate(90deg))
+# so the crime-category column lands next to the page header rather than
+# at the far end of the page. CONTENT_W/CONTENT_H are that block's own
+# pre-rotation dimensions -- CONTENT_W becomes its rotated visual HEIGHT
+# (borrowing the page's vertical space), CONTENT_H becomes its rotated
+# visual WIDTH (must still fit the ~167mm portrait content width).
+CONTENT_W = 222  # mm -- pre-rotation width, becomes visual height after rotation
+CONTENT_H = 163  # mm -- pre-rotation height, becomes visual width after rotation
 
 
 def _weekly_case_count_page(start_date, end_date, page_num):
@@ -438,17 +452,12 @@ def _weekly_case_count_page(start_date, end_date, page_num):
     complete_idxs = [i for i, w in enumerate(weeks) if w["is_complete"]]
     latest_idx = complete_idxs[-1] if complete_idxs else None
 
-    # Column widths are computed, not percentage-guessed, so every week from
-    # the start of the data period fits without crowding or overlap no
-    # matter how many weeks there are. Page content width = 210mm page -
-    # 28mm left margin (spiral-binding allowance) - 15mm right margin.
-    CONTENT_W = 210 - 28 - 15
-    LABEL_W = 21
+    LABEL_W = 26
     n_data_cols = len(weeks) + 2  # weeks + Typical + Trend
     col_w = (CONTENT_W - LABEL_W) / max(n_data_cols, 1)
     colgroup = f'<col style="width:{LABEL_W}mm">' + f'<col style="width:{col_w:.2f}mm">' * n_data_cols
 
-    week_headers = "".join(f'<th class="num">{_short_week_label(w["label"])}</th>' for w in weeks)
+    week_headers = "".join(f'<th class="num">{_full_week_label(w["label"])}</th>' for w in weeks)
     trs = ""
     for col, _ in ALL_CATEGORIES:
         series = per_category[col]
@@ -466,16 +475,22 @@ def _weekly_case_count_page(start_date, end_date, page_num):
         )
 
     content = f"""
+<div class="rot-page-center">
+<div class="rot-outer">
+<div class="rot-inner">
 <div class="sec-title"><h2>Crime Trend Overview</h2><span>Section 02</span></div>
 <p class="sec-desc">Typical is the average of every complete week on file. We compare the most recent complete week against Typical to decide whether each crime is rising or falling.</p>
 <div class="tbl-block">
 <div class="tbl-h">Week-by-Week Case Count</div>
-<div class="tbl-d">Every calendar-month week from the start of the data period (week 1 = days 1&ndash;7, etc). * marks a partial week (fewer than 7 days on file).</div>
+<div class="tbl-d">Every calendar-month week from the start of the data period (week 1 = days 1&ndash;7, etc). * marks a partial week (fewer than 7 days on file). Turn the page anti-clockwise to read.</div>
 <table class="wk-count-tbl">
 <colgroup>{colgroup}</colgroup>
 <thead><tr><th>Crime Category</th>{week_headers}<th class="num">Typ.</th><th class="num">Trend</th></tr></thead>
 <tbody>{trs}</tbody>
 </table>
+</div>
+</div>
+</div>
 </div>
 """
     return _wrap(content, page_num)
