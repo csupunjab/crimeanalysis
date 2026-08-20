@@ -461,16 +461,17 @@ def _cover_page(data_period, reporting_day, n_days):
 <div style="width:1px;height:70px;background:var(--line)"></div>
 <img src="{CSU_LOGO}" style="height:70px;width:auto;object-fit:contain">
 </div>
-<div class="cover-label">Chief Minister's Crime Surveillance Unit &middot; Government of Punjab</div>
-<h1>Crime Analytics Punjab</h1>
+<div class="cover-label" style="margin-top:25px;margin-bottom:0px;">Chief Minister's Crime Surveillance Unit</div>
+<div class="cover-label" style="margin-bottom:20px;">Government of the Punjab</div>
+<h1 style="margin-top:50px;">Crime Analytics Punjab</h1>
 <div class="cover-line"></div>
-<p class="subtitle">Comparative Analysis of Provincial Crime Data: a comprehensive view of crime trends, district-level patterns, and emerging concerns of Punjab for Executive oversight.</p>
+<p class="subtitle">Comparative Analysis of Provincial Crime Data</p>
 <div class="cover-meta">
 <div class="item"><div class="icon-badge">{_ICON_CALENDAR}</div><span><strong>{esc(data_period)}</strong>Reporting Period ({n_days} days)</span></div>
 <div class="div"></div>
 <div class="item"><div class="icon-badge">{_ICON_CALENDAR}</div><span><strong>{esc(reporting_day)}</strong>Issue Date</span></div>
 <div class="div"></div>
-<div class="item"><div class="icon-badge">{_ICON_SHIELD}</div><span><strong>Official &middot; Restricted</strong>Classification</span></div>
+<div class="item"><div class="icon-badge">{_ICON_SHIELD}</div><span><strong>Restricted</strong>Classification</span></div>
 </div>
 </div>
 <div class="cover-illustration">{_COVER_BOTTOM_BAR_SVG}</div>
