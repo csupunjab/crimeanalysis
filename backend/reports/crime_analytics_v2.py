@@ -175,7 +175,7 @@ body{{font-family:-apple-system,'Segoe UI',system-ui,sans-serif;color:#1e293b;li
 .cover-main{{flex:1;display:flex;flex-direction:column;align-items:center;text-align:center;justify-content:center;padding:60mm 20mm 10mm 32mm;position:relative;z-index:1}}
 .cover-label{{font-size:10.5px;letter-spacing:2.6px;text-transform:uppercase;color:var(--accent);margin:20px 0 22px;font-weight:700}}
 .cover h1{{font-family:'Playfair Display',Georgia,serif;font-size:44px;font-weight:800;line-height:1.15;color:var(--dk);margin-bottom:18px}}
-.cover-line{{width:76px;height:3px;background:var(--accent);margin:0 0 22px}}
+.cover-line{{width:160px;height:8px;background:var(--accent);margin:0 0 22px}}
 .cover .subtitle{{font-size:13.5px;font-weight:700;color:var(--dk);opacity:.72;max-width:480px;line-height:1.55;margin-bottom:36px}}
 .cover-meta{{display:flex;align-items:stretch;font-size:9px;letter-spacing:1px;text-transform:uppercase;color:var(--gray)}}
 .cover-meta .item{{display:flex;flex-direction:column;align-items:center;gap:9px;padding:0 28px}}
@@ -218,7 +218,7 @@ tr:nth-child(even){{background:#faf9f7}}
 .rot-page-center{{height:100%;display:flex;align-items:center;justify-content:center;padding-top:14mm}}
 .rot-outer{{width:163mm;height:222mm;position:relative;flex:0 0 auto}}
 .rot-inner{{position:absolute;width:222mm;height:163mm;top:50%;left:50%;transform:translate(-50%,-50%) rotate(90deg)}}
-.chart-wrap{{border:1px solid var(--line);border-radius:6px;padding:8px 10px 4px;margin-bottom:10px}}
+.chart-wrap{{border:1px solid var(--line);border-radius:6px;padding:8px 10px 4px;margin-bottom:20px}}
 .chart-legend{{display:flex;align-items:center;gap:6px;font-size:8.3px;color:var(--gray);margin-top:2px}}
 .chart-legend .dot{{width:7px;height:7px;border-radius:50%;display:inline-block}}
 .crime-grid{{display:flex;flex-direction:column;gap:12px}}
@@ -276,40 +276,177 @@ def _wrap(content_html, page_num):
 
 
 def _trend_chart_svg(weekly):
-    """Line chart for the overall daily-average weekly trend -- the chart
-    the supplied design was missing next to its "Is Crime Rising or
-    Falling" table. Same navy/gold palette as the rest of this report."""
-    avgs = [round(w["week_total"] / w["n_days"], 1) if w["n_days"] else 0 for w in weekly]
-    CW, CH = 700, 132
+    """Line chart for the overall daily-average weekly trend.
+
+    Safely handles empty weekly data so PDF generation does not fail
+    when there are no trend points for the selected date range.
+    """
+    CW, CH = 700, 200
     PAD_L, PAD_R, PAD_T, PAD_B = 8, 8, 16, 22
-    plot_w, plot_h = CW - PAD_L - PAD_R, CH - PAD_T - PAD_B
+    plot_w = CW - PAD_L - PAD_R
+    plot_h = CH - PAD_T - PAD_B
+
+    # ---------------------------------------------------------
+    # No weekly data
+    # ---------------------------------------------------------
+    if not weekly:
+        return (
+            f'<svg viewBox="0 0 {CW} {CH}" width="100%" height="{CH}" '
+            f'xmlns="http://www.w3.org/2000/svg">'
+            f'<text x="{CW / 2:.1f}" y="{CH / 2:.1f}" '
+            f'font-size="12" fill="#64748b" text-anchor="middle">'
+            f'No trend data available'
+            f'</text>'
+            f'</svg>'
+        )
+
+    # ---------------------------------------------------------
+    # Calculate daily averages
+    # ---------------------------------------------------------
+    avgs = [
+        round(
+            w.get("week_total", 0) / w.get("n_days", 0),
+            1
+        )
+        if w.get("n_days")
+        else 0
+        for w in weekly
+    ]
+
+    # ---------------------------------------------------------
+    # Calculate chart range
+    # ---------------------------------------------------------
     lo_v = min(avgs) * 0.85 if avgs else 0
     hi_v = max(avgs) * 1.15 if avgs else 1
 
+    # Avoid zero-height range when all values are identical.
+    if hi_v == lo_v:
+        hi_v = lo_v + 1
+
+    # ---------------------------------------------------------
+    # Convert data point to SVG coordinates
+    # ---------------------------------------------------------
     def xy(i, v):
-        x = PAD_L + (plot_w * i / max(len(avgs) - 1, 1))
-        y = PAD_T + plot_h * (1 - (v - lo_v) / (hi_v - lo_v if hi_v != lo_v else 1))
+        x = PAD_L + (
+            plot_w * i / max(len(avgs) - 1, 1)
+        )
+
+        y = PAD_T + plot_h * (
+            1 - (v - lo_v) / (hi_v - lo_v)
+        )
+
         return x, y
 
-    pts = [xy(i, v) for i, v in enumerate(avgs)]
-    path_d = "M " + " L ".join(f"{x:.1f},{y:.1f}" for x, y in pts)
-    area_d = path_d + f" L {pts[-1][0]:.1f},{PAD_T+plot_h} L {pts[0][0]:.1f},{PAD_T+plot_h} Z"
-    dots = "".join(
-        f'<circle cx="{x:.1f}" cy="{y:.1f}" r="3.1" fill="#c8a45c" stroke="#0c1b2a" stroke-width="1"/>'
-        for x, y in pts
-    )
-    labels = "".join(
-        f'<text x="{pts[i][0]:.1f}" y="{CH-6}" font-size="7" fill="#64748b" text-anchor="middle">'
-        f'W{int(w["week_num"])}{"*" if w["n_days"]<7 else ""}</text>'
-        f'<text x="{pts[i][0]:.1f}" y="{pts[i][1]-8:.1f}" font-size="7.3" fill="#0c1b2a" font-weight="700" text-anchor="middle">{avgs[i]}</text>'
-        for i, w in enumerate(weekly)
-    )
-    return (
-        f'<svg viewBox="0 0 {CW} {CH}" width="100%" height="{CH}">'
-        f'<path d="{area_d}" fill="#0c1b2a" opacity="0.07"/>'
-        f'<path d="{path_d}" fill="none" stroke="#0c1b2a" stroke-width="2"/>{dots}{labels}</svg>'
+    # ---------------------------------------------------------
+    # Generate points
+    # ---------------------------------------------------------
+    pts = [
+        xy(i, v)
+        for i, v in enumerate(avgs)
+    ]
+
+    # Extra safety
+    if not pts:
+        return (
+            f'<svg viewBox="0 0 {CW} {CH}" width="100%" height="{CH}" '
+            f'xmlns="http://www.w3.org/2000/svg">'
+            f'<text x="{CW / 2:.1f}" y="{CH / 2:.1f}" '
+            f'font-size="12" fill="#64748b" text-anchor="middle">'
+            f'No trend data available'
+            f'</text>'
+            f'</svg>'
+        )
+
+    # ---------------------------------------------------------
+    # Line path
+    # ---------------------------------------------------------
+    path_d = (
+        "M "
+        + " L ".join(
+            f"{x:.1f},{y:.1f}"
+            for x, y in pts
+        )
     )
 
+    # ---------------------------------------------------------
+    # Filled area under line
+    # ---------------------------------------------------------
+    baseline_y = PAD_T + plot_h
+
+    area_d = (
+        path_d
+        + f" L {pts[-1][0]:.1f},{baseline_y}"
+        + f" L {pts[0][0]:.1f},{baseline_y}"
+        + " Z"
+    )
+
+    # ---------------------------------------------------------
+    # Gold data-point markers
+    # ---------------------------------------------------------
+    dots = "".join(
+        f'<circle '
+        f'cx="{x:.1f}" '
+        f'cy="{y:.1f}" '
+        f'r="3.1" '
+        f'fill="#c8a45c" '
+        f'stroke="#0c1b2a" '
+        f'stroke-width="1"/>'
+        for x, y in pts
+    )
+
+    # ---------------------------------------------------------
+    # Week labels + values
+    # ---------------------------------------------------------
+    labels = "".join(
+        f'<text '
+        f'x="{pts[i][0]:.1f}" '
+        f'y="{CH - 6}" '
+        f'font-size="7" '
+        f'fill="#64748b" '
+        f'text-anchor="middle">'
+        f'W{int(w.get("week_num", i + 1))}'
+        f'{"*" if w.get("n_days", 0) < 7 else ""}'
+        f'</text>'
+
+        f'<text '
+        f'x="{pts[i][0]:.1f}" '
+        f'y="{pts[i][1] - 8:.1f}" '
+        f'font-size="7.3" '
+        f'fill="#0c1b2a" '
+        f'font-weight="700" '
+        f'text-anchor="middle">'
+        f'{avgs[i]}'
+        f'</text>'
+
+        for i, w in enumerate(weekly)
+    )
+
+    # ---------------------------------------------------------
+    # Final SVG
+    # ---------------------------------------------------------
+    return (
+        f'<svg '
+        f'viewBox="0 0 {CW} {CH}" '
+        f'width="100%" '
+        f'height="{CH}" '
+        f'xmlns="http://www.w3.org/2000/svg">'
+
+        f'<path '
+        f'd="{area_d}" '
+        f'fill="#0c1b2a" '
+        f'opacity="0.07"/>'
+
+        f'<path '
+        f'd="{path_d}" '
+        f'fill="none" '
+        f'stroke="#0c1b2a" '
+        f'stroke-width="2"/>'
+
+        f'{dots}'
+        f'{labels}'
+
+        f'</svg>'
+    )
 
 # ═══════════════════════════════════════════════════════════════════════
 # Page 1: Cover
@@ -320,9 +457,9 @@ def _cover_page(data_period, reporting_day, n_days):
 <div class="cover-dots"></div>
 <div class="cover-main">
 <div style="display:flex;align-items:center;gap:18px;margin-bottom:10px">
-<img src="{GOVT_LOGO}" style="height:78px;width:auto">
-<div style="width:1px;height:56px;background:var(--line)"></div>
-<img src="{CSU_LOGO}" style="height:58px;width:auto;object-fit:contain">
+<img src="{GOVT_LOGO}" style="height:85px;width:auto">
+<div style="width:1px;height:70px;background:var(--line)"></div>
+<img src="{CSU_LOGO}" style="height:70px;width:auto;object-fit:contain">
 </div>
 <div class="cover-label">Chief Minister's Crime Surveillance Unit &middot; Government of Punjab</div>
 <h1>Crime Analytics Punjab</h1>
@@ -511,7 +648,7 @@ def _rising_falling_page(start_date, end_date, page_num):
         badge = badge.replace('class="trend-up"', 'class="tag-up"').replace('class="trend-dn"', 'class="tag-down"').replace('class="trend-fl"', '')
         partial = "*" if w["n_days"] < 7 else ""
         week_rows += (
-            f'<tr><td style="font-weight:600">Week {int(w["week_num"])}{partial}</td><td>{w["week_start"]} to {w["week_end"]}</td>'
+            f'<tr><td style="font-weight:600">Week {int(w["week_num"])}{partial}</td><td>{w["week_start"].strftime("%d-%m-%Y")} to {w["week_end"].strftime("%d-%m-%Y")}</td>'
             f'<td class="num">{w["week_total"]}</td><td class="num">{avgs[i]}</td><td class="num">{badge}</td></tr>'
         )
     typical_avg, latest_avg, overall_pct, direction = _typical_vs_latest(weekly_full)
@@ -572,7 +709,7 @@ def _category_chart_svg(weeks, series, trend_cls):
     # axis stays legible as more weeks accumulate.
     step = 1 if len(idxs) <= 10 else 2
     tick_labels = "".join(
-        f'<text x="{pts[i][0]:.1f}" y="{CH-3}" font-size="6.4" fill="#94a3b8" text-anchor="middle">{esc(labels[i]).replace(" ", "·")}</text>'
+        f'<text x="{pts[i][0]:.1f}" y="{CH-3}" font-size="9" fill="#000" font-weight="bold" text-anchor="middle">{esc(labels[i]).replace(" ", "·")}</text>'
         for i in range(0, len(idxs), step)
     )
     return (
