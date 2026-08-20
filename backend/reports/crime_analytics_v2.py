@@ -179,7 +179,7 @@ body{{font-family:-apple-system,'Segoe UI',system-ui,sans-serif;color:#1e293b;li
 .cover{{width:210mm;height:297mm;background:#fff;color:var(--dk);display:flex;flex-direction:column;position:relative;overflow:hidden}}
 .cover-dots{{position:absolute;top:0;right:0;width:260px;height:260px;background-image:radial-gradient(circle, var(--accent) 1.7px, transparent 1.7px);background-size:12px 12px;-webkit-mask-image:linear-gradient(225deg, #000 30%, transparent 78%);mask-image:linear-gradient(225deg, #000 30%, transparent 78%);opacity:.6}}
 .cover-main{{flex:1;display:flex;flex-direction:column;align-items:center;text-align:center;justify-content:center;padding:30mm 10mm 5mm 20mm;position:relative;z-index:1}}
-.cover-label{{font-size:10.5px;letter-spacing:2.6px;text-transform:uppercase;color:var(--accent);margin:20px 0 22px;font-weight:700}}
+.cover-label{{font-size:10.5px;letter-spacing:2.6px;text-transform:uppercase;color:var(--accent);font-weight:700}}
 .cover h1{{font-family:'Playfair Display',Georgia,serif;font-size:44px;font-weight:800;line-height:1.15;color:var(--dk);margin-bottom:18px}}
 .cover-line{{width:160px;height:8px;background:var(--accent);margin:0 0 22px}}
 .cover .subtitle{{font-size:13.5px;font-weight:700;color:var(--dk);opacity:.72;max-width:480px;line-height:1.55;margin-bottom:36px}}
@@ -464,16 +464,17 @@ def _cover_page(data_period, reporting_day, n_days):
 <div style="width:1px;height:70px;background:var(--line)"></div>
 <img src="{CSU_LOGO}" style="height:70px;width:auto;object-fit:contain">
 </div>
-<div class="cover-label">Chief Minister's Crime Surveillance Unit &middot; Government of Punjab</div>
-<h1>Crime Analytics Punjab</h1>
+<div class="cover-label" style="margin-top:25px;margin-bottom:0px;">Chief Minister's Crime Surveillance Unit</div>
+<div class="cover-label" style="margin-bottom:20px;">Government of the Punjab</div>
+<h1 style="margin-top:50px;">Crime Analytics Punjab</h1>
 <div class="cover-line"></div>
-<p class="subtitle">Comparative Analysis of Provincial Crime Data: a comprehensive view of crime trends, district-level patterns, and emerging concerns of Punjab for Executive oversight.</p>
+<p class="subtitle">Comparative Analysis of Provincial Crime Data</p>
 <div class="cover-meta">
 <div class="item"><div class="icon-badge">{_ICON_CALENDAR}</div><span><strong>{esc(data_period)}</strong>Reporting Period ({n_days} days)</span></div>
 <div class="div"></div>
 <div class="item"><div class="icon-badge">{_ICON_CALENDAR}</div><span><strong>{esc(reporting_day)}</strong>Issue Date</span></div>
 <div class="div"></div>
-<div class="item"><div class="icon-badge">{_ICON_SHIELD}</div><span><strong>Official &middot; Restricted</strong>Classification</span></div>
+<div class="item"><div class="icon-badge">{_ICON_SHIELD}</div><span><strong>Restricted</strong>Classification</span></div>
 </div>
 </div>
 <div>{_CSU_SKETCH}</div>
