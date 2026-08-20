@@ -854,8 +854,7 @@ def _build_default_insights(start_date, end_date, weekly_context=None):
         names = [f'<b>{d}</b>' for d, _ in ranked[:5]]
         joined = ", ".join(names[:-1]) + " and " + names[-1]
         points.append(("navy", "Provincial Crime Concentration", (
-            f'{joined} accounted for a substantial share of reported crime, indicating the need for targeted '
-            f'deployment and differentiated policing measures.'
+            f'{joined} recorded the highest volumes of reported crime.'
         )))
 
     return points

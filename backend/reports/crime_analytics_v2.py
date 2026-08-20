@@ -57,8 +57,6 @@ SHORT_LABELS = {
 # and only shown in the Week-by-Week table.
 CARD_CATEGORIES = [(c, l) for c, l in ALL_CATEGORIES if c != "dacoity_robbery_rape"]
 
-DOC_LABEL = "Crime Analytics Punjab<br>Comparative Analysis"
-
 # Cover page icons (calendar x2, shield-lock), line icons drawn from
 # primitives so they render identically regardless of installed fonts.
 _ICON_CALENDAR = (
@@ -161,11 +159,13 @@ body{{font-family:-apple-system,'Segoe UI',system-ui,sans-serif;color:#1e293b;li
 .page:last-child{{break-after:auto;page-break-after:auto}}
 @media screen{{ body{{background:#DDD}} .page{{margin:14px auto;box-shadow:0 4px 24px rgba(0,0,0,.15)}} }}
 .ph{{flex:0 0 auto;display:flex;align-items:center;gap:9px;padding-bottom:8px;border-bottom:2px solid var(--dk);margin-bottom:14px}}
-.ph img{{height:26px;width:auto}}
-.ph .org{{flex:1;line-height:1.2}}
-.ph .org b{{display:block;font-size:9.5px;font-weight:700;color:var(--dk);letter-spacing:.2px}}
-.ph .org span{{font-size:7.5px;color:var(--gray);letter-spacing:.4px;text-transform:uppercase}}
-.ph .doc{{font-size:7.5px;color:var(--gray);letter-spacing:.5px;text-transform:uppercase;text-align:right}}
+.ph img.ph-csu{{height:34px;width:auto}}
+.ph-spacer{{flex:1}}
+.ph-right{{flex:0 0 auto;display:flex;flex-direction:column;align-items:center;gap:2px}}
+.ph-right img{{height:34px;width:auto}}
+.ph-right .office{{text-align:center}}
+.ph-right .office b{{display:block;font-size:7.2px;font-weight:800;color:var(--dk);letter-spacing:.2px;white-space:nowrap;line-height:1.15}}
+.ph-right .office span{{display:block;font-size:6.4px;color:var(--gray);letter-spacing:.3px;text-transform:uppercase;white-space:nowrap;line-height:1.25}}
 .pc{{flex:1 1 auto;overflow:hidden}}
 .pf{{flex:0 0 auto;display:flex;justify-content:space-between;align-items:center;padding-top:7px;margin-top:10px;border-top:1px solid #cbd5e1;font-size:7.3px;color:var(--gray);letter-spacing:.3px;text-transform:uppercase}}
 .pf b{{color:var(--dk);font-weight:700}}
@@ -186,14 +186,14 @@ body{{font-family:-apple-system,'Segoe UI',system-ui,sans-serif;color:#1e293b;li
 .sec-title{{display:flex;align-items:baseline;justify-content:space-between;margin-bottom:3px}}
 .sec-title h2{{font-family:'Playfair Display',Georgia,serif;font-size:17px;font-weight:700;color:var(--dk)}}
 .sec-title span{{font-size:9px;letter-spacing:2px;text-transform:uppercase;color:var(--gray)}}
-.sec-desc{{font-size:10.5px;color:var(--gray);margin-bottom:12px;line-height:1.5}}
-.insights-grid{{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px}}
-.insight-card{{border:1px solid var(--line);border-radius:6px;padding:12px 15px}}
-.insight-card-head{{display:flex;align-items:center;gap:8px;margin-bottom:6px}}
-.insight-num{{flex:0 0 auto;display:inline-flex;align-items:center;justify-content:center;width:24px;height:24px;background:var(--dk);color:var(--accent);font-size:11px;font-weight:700;border-radius:50%}}
-.insight-card h3{{font-size:12.5px;font-weight:700;color:var(--dk)}}
-.insight-card p{{font-size:10.3px;color:#475569;line-height:1.42}}
-.insight-method{{display:flex;gap:6px;align-items:flex-start;margin-top:7px;padding:6px 9px;background:#F1F0EB;border-radius:5px;font-size:8.3px;color:#64748b;line-height:1.45;color:var(--gray)}}
+.sec-desc{{font-size:10.5px;color:var(--gray);margin-bottom:9px;line-height:1.5}}
+.insights-grid{{display:grid;grid-template-columns:1fr 1fr;gap:7px;margin-bottom:7px}}
+.insight-card{{border:1px solid var(--line);border-radius:6px;padding:9px 14px;display:flex;gap:9px;min-height:140px}}
+.insight-num{{flex:0 0 auto;display:inline-flex;align-items:center;justify-content:center;width:24px;height:24px;background:var(--dk);color:var(--accent);font-size:11.5px;font-weight:700;border-radius:50%}}
+.insight-content{{flex:1;min-width:0;display:flex;flex-direction:column}}
+.insight-card h3{{font-size:13.3px;font-weight:700;color:var(--dk);margin-bottom:5px}}
+.insight-card p{{font-size:10.8px;color:#475569;line-height:1.42}}
+.insight-method{{display:flex;gap:6px;align-items:flex-start;margin-top:auto;background:#F1F0EB;border-radius:5px;padding:6px 9px;font-size:8.4px;color:#64748b;line-height:1.4;color:var(--gray);height:82px;box-sizing:border-box}}
 .insight-method.on-dark{{background:rgba(255,255,255,.08);color:rgba(255,255,255,.6)}}
 .method-label{{font-weight:800;text-transform:uppercase;letter-spacing:.04em;color:#475569;font-size:7.6px;margin-right:4px}}
 .insight-method.on-dark .method-label{{color:rgba(255,255,255,.85)}}
@@ -255,16 +255,15 @@ tr:nth-child(even){{background:#faf9f7}}
 # ═══════════════════════════════════════════════════════════════════════
 def _page_header():
     return (
-        f'<div class="ph"><img src="{CSU_LOGO}"><div class="org">'
-        f"<b>Chief Minister's Crime Surveillance Unit (CSU)</b><span>Government of the Punjab</span></div>"
-        f'<div class="doc">{DOC_LABEL}</div></div>'
+        f'<div class="ph"><img class="ph-csu" src="{CSU_LOGO}"><div class="ph-spacer"></div>'
+        f'<div class="ph-right"><img src="{GOVT_LOGO}"><div class="office">'
+        f"<b>Chief Minister's Office</b><span>Additional Secretary<br/>(Law &amp; Order)</span></div></div></div>"
     )
 
 
 def _page_footer(page_num):
     return (
-        f'<div class="pf"><span><b>Chief Minister\'s Crime Surveillance Unit (CSU)</b></span>'
-        f"<span>Additional Secretary (Law &amp; Order)</span>"
+        f'<div class="pf"><span><b>Crime Analytics Punjab</b></span>'
         f'<span>Page {page_num} of __TOTAL__</span></div>'
     )
 
@@ -389,18 +388,18 @@ def _key_insights_page(start_date, end_date, weekly_context, page_num):
         )
 
     cards = "".join(
-        f'<div class="insight-card"><div class="insight-card-head"><div class="insight-num">{i + 1}</div>'
-        f"<h3>{esc(tag)}</h3></div><p>{_highlight_keywords(text)}</p>{method_box(tag)}</div>"
+        f'<div class="insight-card"><div class="insight-num">{i + 1}</div>'
+        f'<div class="insight-content"><h3>{esc(tag)}</h3><p>{_highlight_keywords(text)}</p>{method_box(tag)}</div></div>'
         for i, (color, tag, text) in enumerate(grid_items)
     )
     summary = ""
     if closing:
         _, tag, text = closing
-        summary = f'<div class="summary-box"><strong>{esc(tag)}:</strong> {_highlight_keywords(text)}{method_box(tag, on_dark=True)}</div>'
+        summary = f'<div class="summary-box"><strong>{esc(tag)}:</strong> {_highlight_keywords(text)}</div>'
 
     content = f"""
 <div class="sec-title"><h2>Key Insights</h2><span>Section 01</span></div>
-<p class="sec-desc">At a glance: the state of crime across Punjab for this reporting period.</p>
+<p class="sec-desc">Crime situation at a glance</p>
 <div class="insights-grid">{cards}</div>
 {summary}
 """
