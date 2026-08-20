@@ -221,7 +221,7 @@ tr:nth-child(even){{background:#faf9f7}}
 .tbl-block{{margin-bottom:14px}}
 .tbl-h{{font-size:11.5px;font-weight:700;color:var(--dk);margin-bottom:2px}}
 .tbl-d{{font-size:9px;color:var(--gray);margin-bottom:6px}}
-.chart-wrap{{border:1px solid var(--line);border-radius:6px;padding:8px 10px 4px;margin-bottom:10px}}
+.chart-wrap{{border:1px solid var(--line);border-radius:6px;padding:8px 10px 4px;margin-bottom:20px;}}
 .chart-legend{{display:flex;align-items:center;gap:6px;font-size:8.3px;color:var(--gray);margin-top:2px}}
 .chart-legend .dot{{width:7px;height:7px;border-radius:50%;display:inline-block}}
 .crime-grid{{display:flex;flex-direction:column;gap:12px}}
@@ -284,7 +284,7 @@ def _trend_chart_svg(weekly):
     Safely handles empty weekly data so PDF generation does not fail
     when there are no trend points for the selected date range.
     """
-    CW, CH = 700, 132
+    CW, CH = 700, 200
     PAD_L, PAD_R, PAD_T, PAD_B = 8, 8, 16, 22
     plot_w = CW - PAD_L - PAD_R
     plot_h = CH - PAD_T - PAD_B
@@ -640,7 +640,7 @@ def _rising_falling_page(start_date, end_date, page_num):
         badge = badge.replace('class="trend-up"', 'class="tag-up"').replace('class="trend-dn"', 'class="tag-down"').replace('class="trend-fl"', '')
         partial = "*" if w["n_days"] < 7 else ""
         week_rows += (
-            f'<tr><td style="font-weight:600">Week {int(w["week_num"])}{partial}</td><td>{w["week_start"]} to {w["week_end"]}</td>'
+            f'<tr><td style="font-weight:600">Week {int(w["week_num"])}{partial}</td><td>{w["week_start"].strftime("%d-%m-%Y")} to {w["week_end"].strftime("%d-%m-%Y")}</td>'
             f'<td class="num">{w["week_total"]}</td><td class="num">{avgs[i]}</td><td class="num">{badge}</td></tr>'
         )
     typical_avg, latest_avg, overall_pct, direction = _typical_vs_latest(weekly_full)
@@ -701,7 +701,7 @@ def _category_chart_svg(weeks, series, trend_cls):
     # axis stays legible as more weeks accumulate.
     step = 1 if len(idxs) <= 10 else 2
     tick_labels = "".join(
-        f'<text x="{pts[i][0]:.1f}" y="{CH-3}" font-size="6.4" fill="#94a3b8" text-anchor="middle">{esc(labels[i]).replace(" ", "·")}</text>'
+        f'<text x="{pts[i][0]:.1f}" y="{CH-3}" font-size="9" fill="#000" font-weight="bold" text-anchor="middle">{esc(labels[i]).replace(" ", "·")}</text>'
         for i in range(0, len(idxs), step)
     )
     return (
