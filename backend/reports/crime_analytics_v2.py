@@ -246,8 +246,9 @@ tr:nth-child(even){{background:#faf9f7}}
 .dist-col.fewest .dist-row strong{{color:var(--green)}}
 .rising{{font-size:9.8px;color:#475569;line-height:1.5}}
 .rising b{{color:var(--dk)}}
-.district-tbl th{{font-size:7px;padding:3px 2px}}
+.district-tbl th{{font-size:7px;padding:6px 3px;white-space:normal;line-height:1.3;vertical-align:middle}}
 .district-tbl td{{font-size:8px;padding:3px 2px}}
+.district-tbl td.num, .district-tbl th.num{{text-align:center}}
 .district-tbl .dn{{font-weight:600;color:var(--dk)}}
 .district-tbl .pct-max{{background:rgba(192,57,43,.12);color:var(--red);font-weight:800;border-radius:3px}}
 """
@@ -852,9 +853,9 @@ def _composition_page(start_date, end_date, page_num):
 
     content = f"""
 <div class="sec-title"><h2>Each District's Crime Mix And Contribution To Punjab</h2><span>Section 04</span></div>
-<p class="sec-desc">The first seven columns break each district's own total into categories (adding to 100% per row). "Other" covers remaining categories, including Road Accident Casualties and Religious Issues. The last column is each district's share of every case reported in Punjab. Highlighted cells mark the district where Murder, Rape, Gang Rape or Child Abuse makes up the largest share of that district's own caseload.</p>
+<p class="sec-desc">The first seven columns show the category-wise composition of each district's reported cases, with each row totaling 100%. "Other" includes all remaining categories, including Road Accident Casualties and Religious Issues. The final column shows each district's share of total reported cases across Punjab. Highlighted cells identify the district with the highest proportion of its own caseload attributed to Murder, Rape, Gang Rape or Child Abuse.</p>
 <table class="district-tbl">
-<thead><tr><th style="width:4%">#</th><th style="width:16%">District</th><th class="num">Murder</th><th class="num">Robbery</th><th class="num">Child Ab.</th><th class="num">Rape</th><th class="num">Gang Rape</th><th class="num">Snatch.</th><th class="num">Other</th><th class="num">Total</th><th class="num">% of Punjab</th></tr></thead>
+<thead><tr><th style="width:4%">#</th><th style="width:18%">District</th><th class="num" style="width:8%">Murder</th><th class="num" style="width:8%">Robbery</th><th class="num" style="width:8%">Child<br/>Abuse</th><th class="num" style="width:8%">Rape</th><th class="num" style="width:8%">Gang<br/>Rape</th><th class="num" style="width:8%">Snatching/<br/>Jhappata</th><th class="num" style="width:8%">Other</th><th class="num" style="width:10%">Total</th><th class="num" style="width:12%">% of<br/>Punjab</th></tr></thead>
 <tbody>{trs}</tbody>
 </table>
 """
