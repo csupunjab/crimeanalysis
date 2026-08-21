@@ -263,6 +263,32 @@ tbody tr:nth-child(even){{background:#faf9f7}}
 .an-card p{{font-size:10.3px;color:#475569;line-height:1.48}}
 .an-red{{color:var(--red)}}
 .an-green{{color:var(--green)}}
+.ra-page{{display:flex;flex-direction:column;height:100%}}
+.ra-wrap{{flex:1;display:flex;align-items:center;border-top:3px solid var(--red);padding-top:22px;margin-top:6px}}
+.ra-grid{{flex:1;display:grid;grid-template-columns:1fr 1fr;gap:20px}}
+.ra-card{{display:flex;flex-direction:column;border:1px solid var(--line);border-left:4px solid var(--line);border-radius:9px;padding:22px 24px;background:#fbfaf7}}
+.ra-card.crit{{border-left-color:var(--red)}}
+.ra-card.high{{border-left-color:var(--orange)}}
+.ra-card-head{{display:flex;align-items:flex-start;gap:13px;margin-bottom:12px}}
+.ra-icon{{flex:0 0 auto;width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;color:#fff}}
+.ra-icon.crit{{background:var(--red)}}
+.ra-icon.high{{background:var(--orange)}}
+.ra-head-text{{flex:1;display:flex;flex-direction:column;gap:6px}}
+.ra-head-text h4{{font-size:13.5px;font-weight:800;color:var(--dk);line-height:1.3}}
+.ra-badge{{align-self:flex-start;font-size:7.6px;font-weight:800;letter-spacing:.5px;text-transform:uppercase;padding:3.5px 9px;border-radius:10px;color:#fff;white-space:nowrap}}
+.ra-badge.crit{{background:var(--red)}}
+.ra-badge.high{{background:var(--orange)}}
+.ra-card p{{font-size:10.8px;color:#475569;line-height:1.65;margin-bottom:14px}}
+.ra-card p b{{color:var(--dk)}}
+.ra-bars{{margin-top:auto;padding-top:14px}}
+.ra-bar-row{{display:flex;align-items:center;gap:9px;margin-bottom:8px}}
+.ra-bar-row:last-child{{margin-bottom:0}}
+.ra-bar-label{{width:88px;flex:0 0 auto;font-size:9px;font-weight:700;color:var(--dk);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}}
+.ra-bar-track{{flex:1;height:6.5px;background:#e9e7e1;border-radius:4px;overflow:hidden}}
+.ra-bar-fill{{display:block;height:100%;border-radius:4px}}
+.ra-bar-fill.crit{{background:var(--red)}}
+.ra-bar-fill.high{{background:var(--orange)}}
+.ra-bar-val{{width:42px;flex:0 0 auto;text-align:right;font-size:9px;color:var(--gray);font-variant-numeric:tabular-nums;font-weight:600}}
 .chart-wrap{{border:1px solid var(--line);border-radius:6px;padding:8px 10px 4px;margin-bottom:20px}}
 .chart-legend{{display:flex;align-items:center;gap:6px;font-size:8.3px;color:var(--gray);margin-top:2px}}
 .chart-legend .dot{{width:7px;height:7px;border-radius:50%;display:inline-block}}
@@ -720,8 +746,8 @@ def _weekly_case_count_analysis():
         (
             "mix",
             "Overall Trend",
-            '<b class="an-red">6</b> categories remained above typical levels, '
-            '<b class="an-green">7</b> below, while <b>Rape</b> remained stable.'
+            '<b class="an-red">7</b> categories remained above typical levels, '
+            '<b class="an-green">6</b> below, while <b>Rape</b> remained stable.'
         ),
     ]
 
@@ -973,6 +999,121 @@ def _composition_page(start_date, end_date, page_num):
 
 
 # ═══════════════════════════════════════════════════════════════════════
+# Final page: Requires Attention — 4 CM-level priority callouts, computed
+# from the period's own case totals, trend concentration and which
+# districts are driving each one (unlike the hand-authored Quick Analysis
+# section on page 3, these are derived straight from the DB every run).
+# ═══════════════════════════════════════════════════════════════════════
+def _requires_attention_page(start_date, end_date, page_num):
+    n_days = (end_date - start_date).days + 1
+
+    totals = db.query(f"""
+        SELECT
+          COALESCE(SUM(c.child_abuse),0) AS child_abuse,
+          COALESCE(SUM(c.rape),0) AS rape, COALESCE(SUM(c.gang_rape),0) AS gang_rape,
+          COALESCE(SUM(c.snatching_jhappata),0) AS snatching,
+          COALESCE(SUM(c.robbery),0) AS robbery
+        FROM crime_daily c JOIN districts d ON d.id = c.district_id
+        WHERE {DISTRICT_FILTER_SQL} AND c.report_date BETWEEN %s AND %s
+    """, (start_date, end_date))[0]
+
+    ca_chronic = _chronic5("child_abuse", start_date, end_date)[:3]
+
+    caw_rows = db.query(f"""
+        SELECT d.name_en, SUM(c.rape + c.gang_rape) v
+        FROM crime_daily c JOIN districts d ON d.id = c.district_id
+        WHERE {DISTRICT_FILTER_SQL} AND c.report_date BETWEEN %s AND %s
+        GROUP BY d.name_en ORDER BY v DESC, d.name_en ASC LIMIT 3
+    """, (start_date, end_date))
+
+    sn_max, _ = _minmax5("snatching_jhappata", start_date, end_date)
+    rb_max, _ = _minmax5("robbery", start_date, end_date)
+    rb_days_by_name = {r["name_en"]: r["days_with_cases"] for r in _chronic5("robbery", start_date, end_date)}
+
+    caw_total = totals["rape"] + totals["gang_rape"]
+    sn_top3 = sn_max[:3]
+    sn_top3_pct = sum(r["v"] for r in sn_top3) / totals["snatching"] * 100 if totals["snatching"] else 0
+    rb_top3 = rb_max[:3]
+    rb_top3_pct = sum(r["v"] for r in rb_top3) / totals["robbery"] * 100 if totals["robbery"] else 0
+    rb_top3_min_days = min((rb_days_by_name.get(r["name_en"], 0) for r in rb_top3), default=0)
+
+    def dl(rows):
+        return ", ".join(f'<b>{esc(r["name_en"])}</b> ({r["v"]:,})' for r in rows)
+
+    def cl(rows):
+        return ", ".join(f'<b>{esc(r["name_en"])}</b> ({r["days_with_cases"]} days, {r["total"]:,} cases)' for r in rows)
+
+    def bars(rows, value_key, sev):
+        max_v = rows[0][value_key] if rows else 1
+        rows_html = "".join(
+            f'<div class="ra-bar-row"><span class="ra-bar-label">{esc(r["name_en"])}</span>'
+            f'<span class="ra-bar-track"><span class="ra-bar-fill {sev}" '
+            f'style="width:{(r[value_key] / max_v * 100 if max_v else 0):.0f}%"></span></span>'
+            f'<span class="ra-bar-val">{r[value_key]:,}</span></div>'
+            for r in rows
+        )
+        return f'<div class="ra-bars">{rows_html}</div>'
+
+    icons = {
+        "shield": '<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3 L20 6 V11 C20 16.5 16.5 20.5 12 22 C7.5 20.5 4 16.5 4 11 V6 Z"/><path d="M12 8 V13"/><path d="M12 16.3 V16.4"/></svg>',
+        "alert": '<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3 L22.5 21 H1.5 Z"/><path d="M12 9.5 V14.5"/><path d="M12 17.7 V17.8"/></svg>',
+        "up": '<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 17 L10 11 L14 15 L20 7"/><path d="M14 7 H20 V13"/></svg>',
+        "vol": '<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="10" width="4" height="10"/><rect x="10" y="5" width="4" height="15"/><rect x="16" y="13" width="4" height="7"/></svg>',
+    }
+
+    items = [
+        (
+            "crit", "shield", "Persistent Child Abuse Cases",
+            f'<b>{totals["child_abuse"]:,} child abuse cases</b> were reported over the {n_days}-day period. '
+            f'The most chronic recurrence was in {cl(ca_chronic)} &mdash; near-daily occurrence rather than '
+            f'isolated incidents, calling for sustained protective and preventive measures in these districts.',
+            bars(ca_chronic, "total", "crit"),
+        ),
+        (
+            "crit", "alert", "Crime Against Women",
+            f'Rape and gang rape together account for <b>{caw_total:,} reported cases</b> this period. '
+            f'{dl(caw_rows)} recorded the highest combined caseloads, underscoring the need for stronger '
+            f'oversight, victim protection and enforcement in these districts.',
+            bars(caw_rows, "v", "crit"),
+        ),
+        (
+            "high", "up", "Sustained Snatching/Jhappata Surge",
+            f'Snatching/Jhappata recorded <b>{totals["snatching"]:,} cases</b> this period, with '
+            f'{dl(sn_top3)} alone accounting for <b>{sn_top3_pct:.0f}%</b> of the provincial total. '
+            f'Enhanced hotspot patrolling in these districts would address the bulk of the problem.',
+            bars(sn_top3, "v", "high"),
+        ),
+        (
+            "high", "vol", "Heavy Robbery Concentration",
+            f'Robbery is the single largest category in this report at <b>{totals["robbery"]:,} cases</b>. '
+            f'{dl(rb_top3)} &mdash; <b>{rb_top3_pct:.0f}%</b> of the provincial total &mdash; are the most '
+            f'persistent hotspots, each logging cases on {rb_top3_min_days}+ of the {n_days} days on file.',
+            bars(rb_top3, "v", "high"),
+        ),
+    ]
+
+    badge_label = {"crit": "Critical", "high": "High"}
+    cards = "".join(
+        f'<div class="ra-card {sev}"><div class="ra-card-head"><div class="ra-icon {sev}">{icons[icon]}</div>'
+        f'<div class="ra-head-text"><h4>{esc(title)}</h4>'
+        f'<span class="ra-badge {sev}">{badge_label[sev]}</span></div></div>'
+        f'<p>{body}</p>{bar_html}</div>'
+        for sev, icon, title, body, bar_html in items
+    )
+
+    content = f"""
+<div class="ra-page">
+<div class="sec-title"><h2>Requires Attention</h2><span>Section 05</span></div>
+<p class="sec-desc">The following areas warrant the Chief Minister's direct attention this reporting period, based on case volume, trend, and district concentration.</p>
+<div class="ra-wrap">
+<div class="ra-grid">{cards}</div>
+</div>
+</div>
+"""
+    return _wrap(content, page_num)
+
+
+# ═══════════════════════════════════════════════════════════════════════
 # Assemble
 # ═══════════════════════════════════════════════════════════════════════
 def generate(start_date=None, end_date=None, reporting_day=None, header_note=None, output="pdf", **_):
@@ -996,6 +1137,8 @@ def generate(start_date=None, end_date=None, reporting_day=None, header_note=Non
     p_detail, n_detail_pages = _detail_pages(start_date, end_date, page_num)
     page_num += n_detail_pages
     p_composition = _composition_page(start_date, end_date, page_num)
+    page_num += 1
+    p_attention = _requires_attention_page(start_date, end_date, page_num)
     page_num += 1  # back cover
 
     total_pages = page_num
@@ -1004,7 +1147,7 @@ def generate(start_date=None, end_date=None, reporting_day=None, header_note=Non
 
     all_html = (
         p_cover + p_insights + p_case_count + p_rising_falling
-        + p_detail + p_composition + p_back_cover
+        + p_detail + p_composition + p_attention + p_back_cover
     )
     all_html = all_html.replace("__TOTAL__", str(total_pages))
 
