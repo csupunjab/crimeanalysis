@@ -223,9 +223,9 @@ body{{font-family:-apple-system,'Segoe UI',system-ui,sans-serif;color:#1e293b;li
 .sec-title{{display:flex;align-items:baseline;justify-content:space-between;margin-bottom:3px}}
 .sec-title h2{{font-family:'Playfair Display',Georgia,serif;font-size:17px;font-weight:700;color:var(--dk)}}
 .sec-title span{{font-size:9px;letter-spacing:2px;text-transform:uppercase;color:var(--gray)}}
-.sec-desc{{font-size:10.5px;color:var(--gray);margin-bottom:5px;line-height:1.5}}
-.insights-grid{{display:grid;grid-template-columns:1fr 1fr;gap:5px;margin-bottom:3px}}
-.insight-card{{border:1px solid var(--line);border-radius:6px;padding:8px 15px 2px;display:flex;flex-direction:column;min-height:114px}}
+.sec-desc{{font-size:10.5px;color:var(--gray);margin-bottom:4px;line-height:1.5}}
+.insights-grid{{display:grid;grid-template-columns:1fr 1fr;gap:4px;margin-bottom:2px}}
+.insight-card{{border:1px solid var(--line);border-radius:6px;padding:7px 15px 2px;display:flex;flex-direction:column;min-height:104px}}
 .insight-card-head{{display:flex;align-items:center;gap:9px;margin-bottom:6px}}
 .insight-num{{flex:0 0 auto;display:inline-flex;align-items:center;justify-content:center;width:25px;height:25px;background:var(--dk);color:var(--accent);font-size:11.5px;font-weight:700;border-radius:50%}}
 .insight-card h3{{font-size:13.5px;font-weight:700;color:var(--dk)}}
@@ -237,7 +237,7 @@ body{{font-family:-apple-system,'Segoe UI',system-ui,sans-serif;color:#1e293b;li
 .tag-up,.trend-up{{color:var(--red);font-weight:700}}
 .tag-down,.trend-dn{{color:var(--green);font-weight:700}}
 .tag-district{{font-weight:600;color:var(--dk)}}
-.summary-box{{background:var(--dk);color:#fff;padding:14px 18px;border-radius:6px;font-size:12.5px;line-height:1.5;margin-bottom:10px}}
+.summary-box{{background:var(--dk);color:#fff;padding:12px 16px;border-radius:6px;font-size:12px;line-height:1.48;margin-bottom:14px}}
 .summary-box strong{{color:var(--accent)}}
 .summary-box strong.dir-up{{color:#e5605a}}
 .summary-box strong.dir-dn{{color:#4ade80}}
