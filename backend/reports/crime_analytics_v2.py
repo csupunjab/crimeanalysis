@@ -293,6 +293,12 @@ tbody tr:nth-child(even){{background:#faf9f7}}
 .chart-legend{{display:flex;align-items:center;gap:6px;font-size:8.3px;color:var(--gray);margin-top:2px}}
 .chart-legend .dot{{width:7px;height:7px;border-radius:50%;display:inline-block}}
 .crime-grid{{display:flex;flex-direction:column;gap:12px}}
+.col-legend{{display:flex;gap:20px;flex-wrap:wrap;font-size:9px;color:var(--gray);margin-bottom:10px;padding:7px 11px;background:#faf9f7;border:1px solid var(--line);border-radius:5px}}
+.col-legend b{{font-weight:700;color:var(--dk)}}
+.col-legend .lg-dot{{display:inline-block;width:7px;height:7px;border-radius:50%;margin-right:5px;vertical-align:middle}}
+.col-legend .lg-most .lg-dot{{background:var(--orange)}}
+.col-legend .lg-chronic .lg-dot{{background:var(--red)}}
+.col-legend .lg-fewest .lg-dot{{background:var(--green)}}
 .crime-card{{border:1px solid var(--line);border-radius:6px;overflow:hidden}}
 .crime-head{{display:flex;align-items:center;gap:10px;padding:9px 14px;background:#faf9f7;border-bottom:1px solid var(--line)}}
 .crime-head h3{{font-size:13.5px;font-weight:700}}
@@ -301,16 +307,18 @@ tbody tr:nth-child(even){{background:#faf9f7}}
 .badge-down{{background:rgba(39,133,74,.1);color:var(--green)}}
 .badge-flat{{background:rgba(100,116,139,.1);color:var(--gray)}}
 .crime-body{{padding:11px 14px 13px}}
+.crime-stats{{display:flex;gap:16px;font-size:9.3px;color:var(--gray);margin-bottom:9px;padding-bottom:8px;border-bottom:1px solid var(--line)}}
+.crime-stats b{{color:var(--dk);font-weight:700}}
 .cat-chart{{margin-bottom:9px}}
 .crime-districts{{display:grid;grid-template-columns:1fr 1fr 1fr;gap:0;font-size:10px;margin-bottom:9px}}
 .dist-col{{padding:0 12px}}
 .dist-col:first-child{{padding-left:0}}
 .dist-col:last-child{{padding-right:0}}
 .dist-col+.dist-col{{border-left:1px solid var(--line)}}
-.dist-col h4{{font-size:8.3px;text-transform:uppercase;letter-spacing:.6px;color:var(--gray);margin-bottom:4px;font-weight:600}}
-.dist-col.most h4{{color:var(--orange)}}
-.dist-col.chronic h4{{color:var(--red)}}
-.dist-col.fewest h4{{color:var(--green)}}
+.dist-col h4{{font-size:7.6px;text-transform:uppercase;letter-spacing:.4px;color:#fff;margin:0 0 6px;font-weight:700;padding:3px 7px;border-radius:4px;display:inline-block}}
+.dist-col.most h4{{background:var(--orange)}}
+.dist-col.chronic h4{{background:var(--red)}}
+.dist-col.fewest h4{{background:var(--green)}}
 .dist-row{{display:flex;justify-content:space-between;padding:1.5px 0}}
 .dist-col.most .dist-row strong{{color:var(--orange)}}
 .dist-col.chronic .dist-row strong{{color:var(--red)}}
@@ -816,10 +824,12 @@ def _rising_falling_page(start_date, end_date, page_num):
 # Pages 4+: Detail of Each Crime — 3 cards per page, same data as
 # crime_analytics_monthly.py's per-category rising-district detection.
 # ═══════════════════════════════════════════════════════════════════════
-def _category_chart_svg(weeks, series, trend_cls):
+def _category_chart_svg(weeks, series, trend_cls, typical):
     """Compact sparkline-style weekly trend for one crime category, shown
     inside its detail card -- the per-crime chart the supplied design
-    didn't have, alongside the province-wide one added to Section 02."""
+    didn't have, alongside the province-wide one added to Section 02. A
+    dashed reference line marks the typical (average) weekly level so the
+    average is visible on the chart itself, not just in the table below."""
     idxs = [i for i, w in enumerate(weeks) if w["has_data"]]
     if len(idxs) < 2:
         return ""
@@ -827,10 +837,13 @@ def _category_chart_svg(weeks, series, trend_cls):
     labels = [weeks[i]["label"] for i in idxs]
     line_color = {"up": "#c0392b", "dn": "#27854a", "fl": "#0c1b2a"}[trend_cls]
 
-    CW, CH = 700, 68
-    PAD_L, PAD_R, PAD_T, PAD_B = 22, 22, 8, 14
+    CW, CH = 700, 96
+    PAD_L, PAD_R, PAD_T, PAD_B = 22, 46, 18, 16
     plot_w, plot_h = CW - PAD_L - PAD_R, CH - PAD_T - PAD_B
-    lo_v, hi_v = min(vals) * 0.85, max(vals) * 1.15
+    # Typical is folded into the range so the average line is never clipped
+    # even if it falls outside the visible (has_data) weeks' own min/max.
+    range_vals = vals + [typical]
+    lo_v, hi_v = min(range_vals) * 0.85, max(range_vals) * 1.15
     if hi_v == lo_v:
         hi_v = lo_v + 1
 
@@ -843,17 +856,38 @@ def _category_chart_svg(weeks, series, trend_cls):
     path_d = "M " + " L ".join(f"{x:.1f},{y:.1f}" for x, y in pts)
     area_d = path_d + f" L {pts[-1][0]:.1f},{PAD_T+plot_h} L {pts[0][0]:.1f},{PAD_T+plot_h} Z"
     dots = "".join(f'<circle cx="{x:.1f}" cy="{y:.1f}" r="2.2" fill="{line_color}"/>' for x, y in pts)
-    # Label every week for <=10 points, every other week beyond that, so the
-    # axis stays legible as more weeks accumulate.
-    step = 1 if len(idxs) <= 10 else 2
+    # Numeric value above every point (matches the Section 02 province-wide
+    # chart's style), clamped so it never renders above the SVG's own top edge.
+    value_labels = "".join(
+        f'<text x="{pts[i][0]:.1f}" y="{max(pts[i][1] - 7, 8):.1f}" font-size="6.6" fill="{line_color}" '
+        f'font-weight="700" text-anchor="middle">{vals[i]:,}</text>'
+        for i in range(len(idxs))
+    )
+    # Full week label under every point -- no abbreviating into a single
+    # dot-joined word and no skipping alternate weeks.
     tick_labels = "".join(
-        f'<text x="{pts[i][0]:.1f}" y="{CH-3}" font-size="9" fill="#000" font-weight="bold" text-anchor="middle">{esc(labels[i]).replace(" ", "·")}</text>'
-        for i in range(0, len(idxs), step)
+        f'<text x="{pts[i][0]:.1f}" y="{CH-4}" font-size="6" fill="#000" font-weight="bold" text-anchor="middle">{esc(labels[i])}</text>'
+        for i in range(len(idxs))
+    )
+    avg_y = PAD_T + plot_h * (1 - (typical - lo_v) / (hi_v - lo_v))
+    # The last point's own value label sits right where the "Avg N" label
+    # starts (same right-hand edge of the chart) -- nudge the avg label
+    # vertically clear of it whenever the two would otherwise land on the
+    # same row.
+    last_value_y = pts[-1][1] - 7
+    avg_text_y = avg_y + 3
+    if abs(avg_text_y - last_value_y) < 10:
+        avg_text_y = last_value_y + 10 if avg_y >= pts[-1][1] else last_value_y - 10
+    avg_line = (
+        f'<line x1="{PAD_L}" y1="{avg_y:.1f}" x2="{CW-PAD_R}" y2="{avg_y:.1f}" '
+        f'stroke="#94a3b8" stroke-width="1" stroke-dasharray="3,3"/>'
+        f'<text x="{CW-PAD_R+5}" y="{avg_text_y:.1f}" font-size="9" fill="#64748b" font-weight="700">Avg {typical:.0f}</text>'
     )
     return (
         f'<svg viewBox="0 0 {CW} {CH}" width="100%" height="{CH}">'
         f'<path d="{area_d}" fill="{line_color}" opacity="0.06"/>'
-        f'<path d="{path_d}" fill="none" stroke="{line_color}" stroke-width="1.6"/>{dots}{tick_labels}</svg>'
+        f'{avg_line}'
+        f'<path d="{path_d}" fill="none" stroke="{line_color}" stroke-width="1.6"/>{dots}{value_labels}{tick_labels}</svg>'
     )
 
 
@@ -864,6 +898,8 @@ def _crime_card(col, label, start_date, end_date, weeks, per_category, complete_
     series = per_category[col]
     complete_vals = [series[i] for i in complete_idxs]
     typical = sum(complete_vals) / len(complete_vals) if complete_vals else 0
+    total = sum(v for v in series if v is not None)
+    n_days = (end_date - start_date).days + 1
     if latest_idx is not None:
         trend_cls, trend_label = _week_trend_badge(series[latest_idx], typical)
     else:
@@ -871,8 +907,8 @@ def _crime_card(col, label, start_date, end_date, weeks, per_category, complete_
     badge_css = {"up": "badge-up", "dn": "badge-down", "fl": "badge-flat"}[trend_cls]
     heading_color = "style=\"color:var(--red)\"" if trend_cls == "up" else ("style=\"color:var(--green)\"" if trend_cls == "dn" else "")
 
-    def col3(rows, value_key):
-        return "".join(f'<div class="dist-row"><span>{esc(r["name_en"])}</span><strong>{r[value_key]}</strong></div>' for r in rows[:3])
+    def col3(rows, value_key, suffix=""):
+        return "".join(f'<div class="dist-row"><span>{esc(r["name_en"])}</span><strong>{r[value_key]:,}{suffix}</strong></div>' for r in rows[:3])
 
     rising = _rising_districts(col, complete_idxs, latest_idx, template, start_date, end_date)
     if rising:
@@ -880,15 +916,22 @@ def _crime_card(col, label, start_date, end_date, weeks, per_category, complete_
     else:
         rising_text = "No district shows a meaningful rise in this category for the latest complete week."
 
-    chart_svg = _category_chart_svg(weeks, series, trend_cls)
+    stats_html = (
+        '<div class="crime-stats">'
+        f'<span>Total: <b>{total:,}</b> cases over <b>{n_days}</b> days</span>'
+        f'<span>Weekly average: <b>{typical:.1f}</b> cases</span>'
+        '</div>'
+    )
+    chart_svg = _category_chart_svg(weeks, series, trend_cls, typical)
     chart_html = f'<div class="cat-chart">{chart_svg}</div>' if chart_svg else ""
 
     return f"""
 <div class="crime-card"><div class="crime-head"><h3 {heading_color}>{esc(label)}</h3><span class="badge {badge_css}">{trend_label}</span></div><div class="crime-body">
+{stats_html}
 {chart_html}
 <div class="crime-districts">
 <div class="dist-col most"><h4>Most Cases</h4>{col3(maxrows, "v")}</div>
-<div class="dist-col chronic"><h4>Chronic</h4>{col3(chronicrows, "days_with_cases")}</div>
+<div class="dist-col chronic"><h4>Chronic</h4>{col3(chronicrows, "days_with_cases", " days")}</div>
 <div class="dist-col fewest"><h4>Fewest</h4>{col3(minrows, "v")}</div>
 </div>
 <div class="rising"><b>Rising:</b> {rising_text}</div>
@@ -912,15 +955,23 @@ def _detail_pages(start_date, end_date, first_page_num):
         "Dacoity/Robbery with Rape is not shown as its own card (0&ndash;1 cases per week throughout the period); "
         "it is reported in the Week-by-Week Case Count table only.</div>"
     )
+    legend = (
+        '<div class="col-legend">'
+        '<span class="lg-most"><span class="lg-dot"></span><b>Most Cases</b> highest total reported this period</span>'
+        '<span class="lg-chronic"><span class="lg-dot"></span><b>Chronic</b> most distinct days with at least one case reported</span>'
+        '<span class="lg-fewest"><span class="lg-dot"></span><b>Fewest</b> lowest total reported this period</span>'
+        '</div>'
+    )
 
     pages = []
-    CARDS_PER_PAGE = 3
+    CARDS_PER_PAGE = 2
     groups = [cards[i:i + CARDS_PER_PAGE] for i in range(0, len(cards), CARDS_PER_PAGE)]
     for gi, group in enumerate(groups):
         is_last = gi == len(groups) - 1
         content = (
             f'<div class="sec-title"><h2>Detail of Each Crime</h2><span>Section 03{" (cont.)" if gi > 0 else ""}</span></div>'
             + ('<p class="sec-desc">Weekly trend, highest/lowest/most chronic districts, and which districts are driving the rise, for every recorded category.</p>' if gi == 0 else "")
+            + legend
             + f'<div class="crime-grid">{"".join(group)}</div>'
             + (note if is_last else "")
         )
