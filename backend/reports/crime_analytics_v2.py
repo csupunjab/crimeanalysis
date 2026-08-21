@@ -132,7 +132,7 @@ _COVER_BOTTOM_BAR_SVG = """
 # so it renders identically regardless of what's installed on the machine
 # doing the PDF render.
 _METHOD_ICON = (
-    '<svg width="10" height="10" viewBox="0 0 16 16" style="flex:0 0 auto;margin-top:2px">'
+    '<svg width="11" height="11" viewBox="0 0 16 16" style="flex:0 0 auto;margin-top:2px">'
     '<circle cx="8" cy="8" r="7" fill="none" stroke="currentColor" stroke-width="1.4"/>'
     '<circle cx="8" cy="4.7" r="1.1" fill="currentColor"/>'
     '<rect x="7" y="7" width="2" height="5.6" rx="0.7" fill="currentColor"/>'
@@ -223,38 +223,45 @@ body{{font-family:-apple-system,'Segoe UI',system-ui,sans-serif;color:#1e293b;li
 .sec-title{{display:flex;align-items:baseline;justify-content:space-between;margin-bottom:3px}}
 .sec-title h2{{font-family:'Playfair Display',Georgia,serif;font-size:17px;font-weight:700;color:var(--dk)}}
 .sec-title span{{font-size:9px;letter-spacing:2px;text-transform:uppercase;color:var(--gray)}}
-.sec-desc{{font-size:10.5px;color:var(--gray);margin-bottom:6px;line-height:1.5}}
-.insights-grid{{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:5px}}
-.insight-card{{border:1px solid var(--line);border-radius:6px;padding:8px 13px 2px;display:flex;gap:9px;min-height:124px}}
-.insight-num{{flex:0 0 auto;display:inline-flex;align-items:center;justify-content:center;width:23px;height:23px;background:var(--dk);color:var(--accent);font-size:11px;font-weight:700;border-radius:50%}}
-.insight-content{{flex:1;min-width:0;display:flex;flex-direction:column}}
-.insight-card h3{{font-size:12.6px;font-weight:700;color:var(--dk);margin-bottom:4px}}
-.insight-card p{{font-size:10.1px;color:#475569;line-height:1.36}}
-.insight-method{{display:flex;gap:6px;align-items:flex-start;margin-top:auto;background:#F1F0EB;border-radius:5px;padding:5px 8px;font-size:7.9px;color:#64748b;line-height:1.32;color:var(--gray);height:74px;box-sizing:border-box}}
+.sec-desc{{font-size:10.5px;color:var(--gray);margin-bottom:5px;line-height:1.5}}
+.insights-grid{{display:grid;grid-template-columns:1fr 1fr;gap:5px;margin-bottom:3px}}
+.insight-card{{border:1px solid var(--line);border-radius:6px;padding:8px 15px 2px;display:flex;flex-direction:column;min-height:114px}}
+.insight-card-head{{display:flex;align-items:center;gap:9px;margin-bottom:6px}}
+.insight-num{{flex:0 0 auto;display:inline-flex;align-items:center;justify-content:center;width:25px;height:25px;background:var(--dk);color:var(--accent);font-size:11.5px;font-weight:700;border-radius:50%}}
+.insight-card h3{{font-size:13.5px;font-weight:700;color:var(--dk)}}
+.insight-card p{{font-size:11px;color:#475569;line-height:1.44}}
+.insight-method{{display:flex;gap:6px;align-items:flex-start;margin-top:auto;background:#F1F0EB;border-radius:5px;padding:6px 9px;font-size:8.4px;color:#64748b;line-height:1.38;color:var(--gray);height:80px;box-sizing:border-box}}
 .insight-method.on-dark{{background:rgba(255,255,255,.08);color:rgba(255,255,255,.6)}}
-.method-label{{font-weight:800;text-transform:uppercase;letter-spacing:.04em;color:#475569;font-size:7.6px;margin-right:4px}}
+.method-label{{font-weight:800;text-transform:uppercase;letter-spacing:.04em;color:#475569;font-size:8.1px;margin-right:4px}}
 .insight-method.on-dark .method-label{{color:rgba(255,255,255,.85)}}
 .tag-up,.trend-up{{color:var(--red);font-weight:700}}
 .tag-down,.trend-dn{{color:var(--green);font-weight:700}}
 .tag-district{{font-weight:600;color:var(--dk)}}
-.summary-box{{background:var(--dk);color:#fff;padding:13px 18px;border-radius:6px;font-size:11px;line-height:1.5}}
+.summary-box{{background:var(--dk);color:#fff;padding:14px 18px;border-radius:6px;font-size:12.5px;line-height:1.5;margin-bottom:10px}}
 .summary-box strong{{color:var(--accent)}}
+.summary-box strong.dir-up{{color:#e5605a}}
+.summary-box strong.dir-dn{{color:#4ade80}}
+.summary-box strong.dir-fl{{color:var(--accent)}}
 table{{width:100%;border-collapse:collapse;font-size:10px;table-layout:fixed}}
 thead{{background:var(--dk);color:#fff}}
 th{{padding:4px 3px;font-weight:600;text-align:left;font-size:8px;letter-spacing:.3px;text-transform:uppercase;line-height:1.2}}
 td{{padding:4px 3px;border-bottom:1px solid #eee;vertical-align:top}}
-tr:nth-child(even){{background:#faf9f7}}
+tbody tr:nth-child(even){{background:#faf9f7}}
 .wk-count-tbl{{font-size:7.8px;table-layout:fixed}}
-.wk-count-tbl th{{padding:6px 2px;font-size:7px;white-space:normal;line-height:1.25}}
-.wk-count-tbl td{{padding:6.5px 2px}}
-.wk-count-tbl .wk-label{{font-weight:600;text-align:left;white-space:normal;line-height:1.22;font-size:7.8px;padding-right:4px}}
+.wk-count-tbl th{{padding:6px 2px;font-size:7px;white-space:normal;line-height:1.25;position:relative}}
+.wk-count-tbl td{{padding:6.5px 2px;color:#1e2126;position:relative}}
+.wk-count-tbl .month-hdr{{text-align:center}}
+.wk-count-tbl .month-split::before{{content:"";position:absolute;left:0;top:50%;transform:translateY(-50%);height:12px;width:1px;background:rgba(255,255,255,.35)}}
+.wk-count-tbl tbody tr:hover{{background:#f1f0ea}}
+.wk-count-tbl .wk-label{{font-weight:600;text-align:left;white-space:normal;line-height:1.22;font-size:7.8px;padding-right:4px;color:var(--dk)}}
+.wk-count-tbl td.num{{font-variant-numeric:tabular-nums}}
+.wk-count-tbl td.typ-col{{font-weight:700;color:var(--dk)}}
+.wk-count-tbl td.tag-up{{color:var(--red)}}
+.wk-count-tbl td.tag-down{{color:var(--green)}}
 .num{{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}}
 .tbl-block{{margin-bottom:14px}}
 .tbl-h{{font-size:11.5px;font-weight:700;color:var(--dk);margin-bottom:2px}}
 .tbl-d{{font-size:9px;color:var(--gray);margin-bottom:6px}}
-.rot-page-center{{height:100%;display:flex;align-items:center;justify-content:center;padding-top:14mm}}
-.rot-outer{{width:158mm;height:216mm;position:relative;flex:0 0 auto;overflow:hidden}}
-.rot-inner{{position:absolute;top:0;left:0;width:216mm;height:158mm;transform-origin:top left;transform:rotate(90deg) translateY(-100%)}}
 .chart-wrap{{border:1px solid var(--line);border-radius:6px;padding:8px 10px 4px;margin-bottom:20px}}
 .chart-legend{{display:flex;align-items:center;gap:6px;font-size:8.3px;color:var(--gray);margin-top:2px}}
 .chart-legend .dot{{width:7px;height:7px;border-radius:50%;display:inline-block}}
@@ -569,8 +576,8 @@ def _key_insights_page(start_date, end_date, weekly_context, page_num):
         )
 
     cards = "".join(
-        f'<div class="insight-card"><div class="insight-num">{i + 1}</div>'
-        f'<div class="insight-content"><h3>{esc(tag)}</h3><p style="margin-bottom:10px">{_highlight_keywords(text)}</p>{method_box(tag)}</div></div>'
+        f'<div class="insight-card"><div class="insight-card-head"><div class="insight-num">{i + 1}</div>'
+        f'<h3>{esc(tag)}</h3></div><p style="margin-bottom:10px">{_highlight_keywords(text)}</p>{method_box(tag)}</div>'
         for i, (color, tag, text) in enumerate(grid_items)
     )
     summary = ""
@@ -603,26 +610,18 @@ def _key_insights_page(start_date, end_date, weekly_context, page_num):
 MAX_WEEKS_SHOWN = 20
 
 
-def _full_week_label(label):
-    """'May Wk1' -> 'May Week 1' -- spelled out in full now that the table
-    is rotated onto its side, which gives it far more usable width than
-    the old squeezed abbreviations needed."""
-    return label.replace("Wk", "Week ")
+def _week_num_label(label):
+    """'May Wk1' -> 'Week 1' -- the month itself is shown once in its own
+    header row (grouped via colspan), so the per-column label only needs
+    the week number, not a repeat of the month name."""
+    return label.split(" ")[1].replace("Wk", "Week ")
 
 
-# The page header (CSU/govt logos) and footer (page number) stay upright,
-# same as every other page -- same binding margin throughout the report.
-# Everything else on this page (section heading, table heading/description,
-# and the table itself) rotates together as one block, via .rot-outer/
-# .rot-inner below, so it all reads in the same direction: turn the
-# printed page anti-clockwise to read it -- rotated clockwise (rotate(90deg))
-# so the crime-category column lands next to the page header rather than
-# at the far end of the page. CONTENT_W/CONTENT_H are that block's own
-# pre-rotation dimensions -- CONTENT_W becomes its rotated visual HEIGHT
-# (borrowing the page's vertical space), CONTENT_H becomes its rotated
-# visual WIDTH (must still fit the ~167mm portrait content width).
-CONTENT_W = 216  # mm -- pre-rotation width, becomes visual height after rotation
-CONTENT_H = 158  # mm -- pre-rotation height, becomes visual width after rotation
+# Portrait page, same as every other page in the report -- no rotation.
+# Full month/week labels still fit because the month name is shown ONCE
+# per month (spanning that month's weeks via colspan) instead of being
+# repeated in every single week column.
+CONTENT_W = 210 - 28 - 15  # mm -- 210mm page - 28mm left (binding) - 15mm right margin
 
 
 def _weekly_case_count_page(start_date, end_date, page_num):
@@ -630,12 +629,32 @@ def _weekly_case_count_page(start_date, end_date, page_num):
     complete_idxs = [i for i, w in enumerate(weeks) if w["is_complete"]]
     latest_idx = complete_idxs[-1] if complete_idxs else None
 
-    LABEL_W = 26
+    LABEL_W = 20
     n_data_cols = len(weeks) + 2  # weeks + Typical + Trend
     col_w = (CONTENT_W - LABEL_W) / max(n_data_cols, 1)
     colgroup = f'<col style="width:{LABEL_W}mm">' + f'<col style="width:{col_w:.2f}mm">' * n_data_cols
 
-    week_headers = "".join(f'<th class="num">{_full_week_label(w["label"])}</th>' for w in weeks)
+    # Group consecutive weeks by month so each month name is written once,
+    # spanning its own weeks, instead of being repeated in every column.
+    month_groups = []
+    month_start_idxs = set()
+    for i, w in enumerate(weeks):
+        month = w["label"].split(" ")[0]
+        if month_groups and month_groups[-1][0] == month:
+            month_groups[-1][1] += 1
+        else:
+            month_groups.append([month, 1])
+            if i > 0:
+                month_start_idxs.add(i)
+    month_header = "".join(
+        f'<th colspan="{count}" class="month-hdr{" month-split" if gi > 0 else ""}">{month}</th>'
+        for gi, (month, count) in enumerate(month_groups)
+    )
+    week_num_header = "".join(
+        f'<th class="num{" month-split" if i in month_start_idxs else ""}">{_week_num_label(w["label"])}</th>'
+        for i, w in enumerate(weeks)
+    )
+
     trs = ""
     for col, _ in ALL_CATEGORIES:
         series = per_category[col]
@@ -649,26 +668,23 @@ def _weekly_case_count_page(start_date, end_date, page_num):
         cells = "".join(f'<td class="num">{"-" if v is None else v}</td>' for v in series)
         trs += (
             f'<tr><td class="wk-label">{SHORT_LABELS[col]}</td>{cells}'
-            f'<td class="num">{typical:.1f}</td><td class="num {badge_css}">{trend_label}</td></tr>'
+            f'<td class="num typ-col">{typical:.1f}</td><td class="num {badge_css}">{trend_label}</td></tr>'
         )
 
     content = f"""
-<div class="rot-page-center">
-<div class="rot-outer">
-<div class="rot-inner">
 <div class="sec-title"><h2>Crime Trend Overview</h2><span>Section 02</span></div>
 <p class="sec-desc">Typical is the average of every complete week on file. We compare the most recent complete week against Typical to decide whether each crime is rising or falling.</p>
 <div class="tbl-block">
 <div class="tbl-h">Week-by-Week Case Count</div>
-<div class="tbl-d">Every calendar-month week from the start of the data period (week 1 = days 1&ndash;7, etc). * marks a partial week (fewer than 7 days on file). Turn the page anti-clockwise to read.</div>
+<div class="tbl-d">Every calendar-month week from the start of the data period (week 1 = days 1&ndash;7, etc). * marks a partial week (fewer than 7 days on file).</div>
 <table class="wk-count-tbl">
 <colgroup>{colgroup}</colgroup>
-<thead><tr><th>Crime Category</th>{week_headers}<th class="num">Typ.</th><th class="num">Trend</th></tr></thead>
+<thead>
+<tr><th rowspan="2">Crime Category</th>{month_header}<th rowspan="2" class="num typ-col">Typ.</th><th rowspan="2" class="num">Trend</th></tr>
+<tr>{week_num_header}</tr>
+</thead>
 <tbody>{trs}</tbody>
 </table>
-</div>
-</div>
-</div>
 </div>
 """
     return _wrap(content, page_num)
@@ -693,6 +709,7 @@ def _rising_falling_page(start_date, end_date, page_num):
             f'<td class="num">{w["week_total"]}</td><td class="num">{avgs[i]}</td><td class="num">{badge}</td></tr>'
         )
     typical_avg, latest_avg, overall_pct, direction = _typical_vs_latest(weekly_full)
+    dir_cls = {"climbing": "dir-up", "falling": "dir-dn"}.get(direction, "dir-fl")
     complete_weeks = [w for w in weekly_full if w["n_days"] >= 7]
     latest_label = f'Week {int(complete_weeks[-1]["week_num"])}' if complete_weeks else "n/a"
     note = f' Showing the most recent {MAX_WEEKS_SHOWN} of {len(weekly_full)} weeks on file.' if truncated else ""
@@ -710,7 +727,7 @@ def _rising_falling_page(start_date, end_date, page_num):
 <tbody>{week_rows}</tbody>
 </table>
 </div>
-<div class="summary-box"><strong>Overall Direction:</strong> The most recent complete week on file ({latest_label}) averaged {latest_avg} cases per day, against a typical week of {typical_avg}. The province is <strong>{direction} ({overall_pct:+.0f}% vs typical)</strong>.</div>
+<div class="summary-box"><strong>Overall Direction:</strong> The most recent complete week on file ({latest_label}) averaged {latest_avg} cases per day, against a typical week of {typical_avg}. The province is <strong class="{dir_cls}">{direction} ({overall_pct:+.0f}% vs typical)</strong>.</div>
 """
     return _wrap(content, page_num)
 
